@@ -1,0 +1,19 @@
+<Configuration>
+  <Info Description="" />
+  <Add OfficeClientEdition="64" ForceUpgrade="TRUE">
+    <Product ID="ProjectPro2019Volume" PIDKEY="B4NPR-3FKK7-T2MBV-FRQ4W-PKD2B"> <!--This is the KMS Key need the KMS Server to activate-->
+      <Language ID="en-us" />
+      <ExcludeApp ID="Groove" />
+    </Product>
+  </Add>
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE"/>
+  <Property Name="SharedComputerLicensing" Value="0" />
+  <Property Name="PinIconsToTaskbar" Value="FALSE" />
+  <Property Name="SCLCacheOverride" Value="0" />
+  <Updates Enabled="TRUE" />
+  <AppSettings>
+    <Setup Name="<<CORPNAME>>" Value="<<CORPNAME>>" />
+  </AppSettings>
+  <Display Level="Full" AcceptEULA="True" />
+  <Logging Level="Standard" Path="%temp%" />
+</Configuration>

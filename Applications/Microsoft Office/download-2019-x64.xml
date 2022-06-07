@@ -1,0 +1,16 @@
+<Configuration>
+  <Add SourcePath="C:\Software\Office2019" OfficeClientEdition="64" Channel="PerpetualVL2019">
+    <Product ID="ProPlus2019Volume">
+      <Language ID="en-us" />
+    </Product>
+    <Product ID="VisioPro2019Volume">
+      <Language ID="en-us" />
+    </Product>
+    <Product ID="ProjectPro2019Volume">
+      <Language ID="en-us" />
+    </Product>
+  </Add>
+ 
+  <Logging Name="OfficeDownload *.txt" Level="Standard" Path="<<LOGPATH>>" />
+
+</Configuration>
