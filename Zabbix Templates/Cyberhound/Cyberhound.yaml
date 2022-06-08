@@ -1,0 +1,1501 @@
+zabbix_export:
+  version: '6.0'
+  date: '2022-06-08T03:20:15Z'
+  groups:
+    -
+      uuid: dc579cd7a1a34222933f24f52a68bcd8
+      name: 'Linux servers'
+  templates:
+    -
+      uuid: 126e02d791ec49c2b2f11e19f8938611
+      template: 'Cyberhound - Template'
+      name: 'Cyberhound - Template'
+      groups:
+        -
+          name: 'Linux servers'
+      items:
+        -
+          uuid: bf8ba2a5be2c44989dec2b62b1acf0a3
+          name: 'Memory - Available'
+          type: SNMP_AGENT
+          snmp_oid: 'UCD-SNMP-MIB::memAvailReal.0'
+          key: memory.Available
+          delay: '300'
+          units: B
+          description: 'The amount of real/physical memory currently unused or available.'
+          preprocessing:
+            -
+              type: MULTIPLIER
+              parameters:
+                - '1024'
+          tags:
+            -
+              tag: Application
+              value: Resources
+        -
+          uuid: ac3f9e0e5b2b4c12b7b5823a31cd94ae
+          name: 'Memory - Buffered'
+          type: SNMP_AGENT
+          snmp_oid: 'UCD-SNMP-MIB::memBuffer.0'
+          key: memory.Buffer
+          delay: '300'
+          units: B
+          description: |
+            The total amount of real or virtual memory currently allocated for use as memory buffers.
+            
+            This object will not be implemented on hosts where the underlying operating system does not explicitly identify memory as specifically reserved for this purpose.
+          preprocessing:
+            -
+              type: MULTIPLIER
+              parameters:
+                - '1024'
+          tags:
+            -
+              tag: Application
+              value: Resources
+        -
+          uuid: 820781f61b084c1f9c074f7bde3f3e83
+          name: 'Memory - Cached'
+          type: SNMP_AGENT
+          snmp_oid: 'UCD-SNMP-MIB::memCached.0'
+          key: memory.Cached
+          delay: '300'
+          units: B
+          description: |
+            The total amount of real or virtual memory currently allocated for use as cached memory.
+            
+            This object will not be implemented on hosts where the underlying operating system does not explicitly identify memory as specifically reserved for this purpose."
+          preprocessing:
+            -
+              type: MULTIPLIER
+              parameters:
+                - '1024'
+          tags:
+            -
+              tag: Application
+              value: Resources
+        -
+          uuid: c1db952505c448f091f7a2272c4d7e32
+          name: 'Memory - Free'
+          type: SNMP_AGENT
+          snmp_oid: 'UCD-SNMP-MIB::memTotalFree.0'
+          key: memory.Free
+          delay: '300'
+          units: B
+          description: 'The total amount of memory free or available for use on this host. This value typically covers both real memory and swap space or virtual memory.'
+          preprocessing:
+            -
+              type: MULTIPLIER
+              parameters:
+                - '1024'
+          tags:
+            -
+              tag: Application
+              value: Resources
+        -
+          uuid: 1ca6438149e040bba7ac7f4784e0c23f
+          name: 'Memory - Percentage Available'
+          type: CALCULATED
+          key: memory.PercentageAvailable
+          delay: '300'
+          value_type: FLOAT
+          units: '%'
+          params: '100 / last(//memory.Total) * last(//memory.Available)'
+          description: 'The amount of real/physical memory currently unused or available in percent.'
+          tags:
+            -
+              tag: Application
+              value: Resources
+        -
+          uuid: 21fe6776963b4f928e10853491c404bb
+          name: 'Memory - Shared'
+          type: SNMP_AGENT
+          snmp_oid: 'UCD-SNMP-MIB::memShared.0'
+          key: memory.Shared
+          delay: '300'
+          units: B
+          description: |
+            The total amount of real or virtual memory currently allocated for use as shared memory.
+            
+            This object will not be implemented on hosts where the underlying operating system does not explicitly identify memory as specifically reserved for this purpose.
+          preprocessing:
+            -
+              type: MULTIPLIER
+              parameters:
+                - '1024'
+          tags:
+            -
+              tag: Application
+              value: Resources
+        -
+          uuid: ef486db74f074117914baab6cc88cde2
+          name: 'Memory - Total'
+          type: SNMP_AGENT
+          snmp_oid: 'UCD-SNMP-MIB::memTotalReal.0'
+          key: memory.Total
+          delay: '300'
+          units: B
+          description: 'The total amount of real/physical memory installed.'
+          preprocessing:
+            -
+              type: MULTIPLIER
+              parameters:
+                - '1024'
+          tags:
+            -
+              tag: Application
+              value: Resources
+        -
+          uuid: 7752b787e46543db9f88b4d55cc83dbd
+          name: 'SNMP traps (fallback)'
+          type: SNMP_TRAP
+          key: snmptrap.fallback
+          delay: '0'
+          history: 2w
+          trends: '0'
+          value_type: LOG
+          description: 'Item is used to collect all SNMP traps unmatched by other snmptrap items'
+          logtimefmt: 'hh:mm:sszyyyy/MM/dd'
+          tags:
+            -
+              tag: Application
+              value: 'Other Information'
+        -
+          uuid: 7be3bed161d5403cb907f86a8ca9eb76
+          name: 'System - Contact Details'
+          type: SNMP_AGENT
+          snmp_oid: 'SNMPv2-MIB::sysContact.0'
+          key: system.contact
+          delay: 1h
+          history: 2w
+          trends: '0'
+          value_type: TEXT
+          description: |
+            MIB: SNMPv2-MIB
+            The textual identification of the contact person for this managed node, together with information on how to contact this person.  If no contact information is known, the value is the zero-length string.
+          inventory_link: CONTACT
+          preprocessing:
+            -
+              type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
+          tags:
+            -
+              tag: Application
+              value: Details
+        -
+          uuid: 36f1ef7636ea4eaf9a6d676a559c33fd
+          name: 'System - Location'
+          type: SNMP_AGENT
+          snmp_oid: 'SNMPv2-MIB::sysLocation.0'
+          key: system.location
+          delay: 1h
+          history: 2w
+          trends: '0'
+          value_type: CHAR
+          description: |
+            MIB: SNMPv2-MIB
+            The physical location of this node (e.g., `telephone closet, 3rd floor').  If the location is unknown, the value is the zero-length string.
+          inventory_link: LOCATION
+          preprocessing:
+            -
+              type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          tags:
+            -
+              tag: Application
+              value: Details
+        -
+          uuid: 637dffbbf76d474dba9b0aacec4b41a4
+          name: 'System - Name'
+          type: SNMP_AGENT
+          snmp_oid: 'SNMPv2-MIB::sysName.0'
+          key: system.name
+          delay: 1h
+          history: 2w
+          trends: '0'
+          value_type: CHAR
+          description: |
+            MIB: SNMPv2-MIB
+            An administratively-assigned name for this managed node.By convention, this is the node's fully-qualified domain name.  If the name is unknown, the value is the zero-length string.
+          inventory_link: NAME
+          preprocessing:
+            -
+              type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          tags:
+            -
+              tag: Application
+              value: Details
+        -
+          uuid: 79ac3e4de33e4c0d975211907c0346ea
+          name: 'System - Uptime'
+          type: SNMP_AGENT
+          snmp_oid: 'HOST-RESOURCES-MIB::hrSystemUptime.0'
+          key: sysUptime
+          delay: 60s
+          history: 1d
+          units: uptime
+          preprocessing:
+            -
+              type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            -
+              tag: Application
+              value: Status
+      discovery_rules:
+        -
+          uuid: 2eaba975947f48c09a6f9bde709c193e
+          name: Disks
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#DISK_INDEX},UCD-SNMP-MIB::dskIndex,{#DISK_DEVICE},UCD-SNMP-MIB::dskDevice]'
+          key: disk.Discovery
+          delay: '30'
+          lifetime: '0'
+          item_prototypes:
+            -
+              uuid: 0ce3fd3a2310470c9e649342425382bf
+              name: '"{#DISK_DEVICE}" - Available Space on the Disk/Partition (in kBytes) - High'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskAvailHigh.{#SNMPINDEX}'
+              key: 'disk.AvailableHigh[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              units: Bytes
+              description: |
+                Available space on the disk/parition "{#DISK_DEVICE}" (in kBytes)
+                
+                Together with dskAvailLow composes 64-bit number.
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: c848c78c582b4c79aa46a5be3679d60a
+              name: '"{#DISK_DEVICE}" - Available Space on the Disk/Partition (in kBytes) - Low'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskAvailLow.{#SNMPINDEX}'
+              key: 'disk.AvailableLow[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              units: Bytes
+              description: |
+                Available space on the disk/parition "{#DISK_DEVICE}" (in kBytes)
+                
+                Together with dskAvailHigh composes 64-bit number.
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 32e6f9b8cdab4736a23a5123e9026e0b
+              name: '"{#DISK_DEVICE}" - Available Space on the Disk/Partition (in kBytes)'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskAvail.{#SNMPINDEX}'
+              key: 'disk.Available[{#SNMPINDEX}]'
+              delay: '30'
+              units: Bytes
+              description: |
+                Available space on the disk/parition "{#DISK_DEVICE}" (in kBytes)
+                
+                NOTE: For large disks (>2Tb), this value will latch at INT32_MAX (2147483647).
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 07da8d32d20d47579223d0f43edc8119
+              name: '"{#DISK_DEVICE}" - Error Flag'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskErrorFlag.{#SNMPINDEX}'
+              key: 'disk.ErrorFlag[{#SNMPINDEX}]'
+              delay: '30'
+              description: 'Error flag signaling that the disk or partition is under the minimum required space configured for it.'
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 26adc8ea3b084c53813749f9481c0012
+              name: '"{#DISK_DEVICE}" - Error Message'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskErrorMsg.{#SNMPINDEX}'
+              key: 'disk.ErrorMessage[{#SNMPINDEX}]'
+              delay: '30'
+              trends: '0'
+              value_type: TEXT
+              description: 'A text description providing a warning and the space left on the disk.'
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 68103e81fbd54dfab4adec30f17dc99c
+              name: '"{#DISK_DEVICE}" - Minimum Space (in kBytes)'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskMinimum.{#SNMPINDEX}'
+              key: 'disk.Minimum[{#SNMPINDEX}]'
+              delay: '30'
+              units: kBytes
+              description: 'Minimum space required on the disk "{#DISK_DEVICE}" (in kBytes) before the  errors are triggered.'
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 38bde8936bdc444abbea9a13c2c08b3d
+              name: '"{#DISK_DEVICE}" - Minimum Percent'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskMinPercent.{#SNMPINDEX}'
+              key: 'disk.MinPercent[{#SNMPINDEX}]'
+              delay: '30'
+              value_type: FLOAT
+              units: '%'
+              description: 'Percentage of minimum space required on the disk "{#DISK_DEVICE}" before the errors are triggered.'
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 4a6ecf7c17bf4db3b6dd799d3116ed60
+              name: '"{#DISK_DEVICE}" - Total Size of the Disk/Partition (in kBytes) - (High)'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskTotalHigh.{#SNMPINDEX}'
+              key: 'disk.TotalHigh[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              units: Bytes
+              description: |
+                Total size of the disk/partion "{#DISK_DEVICE}" (in kBytes)
+                
+                Together with dskTotalLow composes 64-bit number.
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 912a83a736eb4f19b9311b6673dfdf64
+              name: '"{#DISK_DEVICE}" - Total Size of the Disk/Partition (in kBytes) - (Low)'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskTotalLow.{#SNMPINDEX}'
+              key: 'disk.TotalLow[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              units: Bytes
+              description: |
+                Total size of the disk/partion "{#DISK_DEVICE}" (in kBytes)
+                
+                Together with dskTotalHigh composes 64-bit number.
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 5955034b9c9143a097b08eae7deaada5
+              name: '"{#DISK_DEVICE}" - Total Size of the Disk/Partition (in kBytes)'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskTotal.{#SNMPINDEX}'
+              key: 'disk.Total[{#SNMPINDEX}]'
+              delay: '30'
+              units: Bytes
+              description: 'Total size of the disk/partion "{#DISK_DEVICE}" (in kBytes)'
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 34bedf48eb5f4d90aa6455d2283dc3fb
+              name: '"{#DISK_DEVICE}" - Used Space on the Disk/Partition (in kBytes) - High'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskUsedHigh.{#SNMPINDEX}'
+              key: 'disk.UsedHigh[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              units: Bytes
+              description: |
+                Used space on the disk/parition "{#DISK_DEVICE}" (in kBytes)
+                
+                Together with dskUsedLow composes 64-bit number.
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: ea7f37219ce94e9d8e1cd1aac3fe74ae
+              name: '"{#DISK_DEVICE}" - Used Space on the Disk/Partition (in kBytes) - Low'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskUsedLow.{#SNMPINDEX}'
+              key: 'disk.UsedLow[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              units: Bytes
+              description: |
+                Used space on the disk/parition "{#DISK_DEVICE}" (in kBytes)
+                
+                Together with dskUsedHigh composes 64-bit number.
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: e15f495656a0412d9639fa99dd1b3d05
+              name: '"{#DISK_DEVICE}" - Used  inode Percentage'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskPercentNode.{#SNMPINDEX}'
+              key: 'disk.UsedNodePercent[{#SNMPINDEX}]'
+              delay: '30'
+              value_type: FLOAT
+              units: '%'
+              description: 'Percentage of inodes used on disk "{#DISK_DEVICE}"'
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+            -
+              uuid: 18e7f255182b4264aa6bea3d0df6f045
+              name: '"{#DISK_DEVICE}" - Used Space on the Disk/Partition (in kBytes)'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::dskUsed.{#SNMPINDEX}'
+              key: 'disk.Used[{#SNMPINDEX}]'
+              delay: '30'
+              units: Bytes
+              description: |
+                Used space on the disk/parition "{#DISK_DEVICE}" (in kBytes)
+                
+                NOTE: For large disks (>2Tb), this value will latch at INT32_MAX (2147483647).
+              tags:
+                -
+                  tag: Application
+                  value: Disks
+        -
+          uuid: cb250342efcb4e20a7780e17e85d0bb6
+          name: 'Disk IO'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#DISKIO_INDEX},UCD-DISKIO-MIB::diskIOIndex,{#DISKIO_DEVICE},UCD-DISKIO-MIB::diskIODevice]'
+          key: diskIO.Discovery
+          delay: '30'
+          lifetime: '0'
+          item_prototypes:
+            -
+              uuid: 7fdbac486eb14ca48236104b557df46c
+              name: '"{#DISKIO_DEVICE}" - Read Bytes'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-DISKIO-MIB::diskIONRead.{#SNMPINDEX}'
+              key: 'diskIO.BytesRead[{#SNMPINDEX}]'
+              delay: '30'
+              units: b
+              description: 'Counter of Bytes Read since boot for "{#DISKIO_DEVICE}"'
+              tags:
+                -
+                  tag: Application
+                  value: 'Disks - IO'
+            -
+              uuid: 74b33cfd9cea4e0ab53379c5549e0183
+              name: '"{#DISKIO_DEVICE}" - Written Bytes'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-DISKIO-MIB::diskIONWritten.{#SNMPINDEX}'
+              key: 'diskIO.BytesWritten[{#SNMPINDEX}]'
+              delay: '30'
+              units: b
+              description: 'Counter of Bytes Written since boot for "{#DISKIO_DEVICE}"'
+              tags:
+                -
+                  tag: Application
+                  value: 'Disks - IO'
+            -
+              uuid: 119b7ef6aa4441e4b2524fe046ba20eb
+              name: '"{#DISKIO_DEVICE}" - 1 Minute Load Average'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-DISKIO-MIB::diskIOLA1.{#SNMPINDEX}'
+              key: 'diskIO.LoadAverage1Min[{#SNMPINDEX}]'
+              delay: '30'
+              description: '1 Minute Load Average for "{#DISKIO_DEVICE}"'
+              tags:
+                -
+                  tag: Application
+                  value: 'Disks - IO'
+            -
+              uuid: 30b5b06a0b24436ca71fe9f8589a88be
+              name: '"{#DISKIO_DEVICE}" - 5 Minute Load Average'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-DISKIO-MIB::diskIOLA5.{#SNMPINDEX}'
+              key: 'diskIO.LoadAverage5Min[{#SNMPINDEX}]'
+              delay: '30'
+              description: '5 Minute Load Average for "{#DISKIO_DEVICE}"'
+              tags:
+                -
+                  tag: Application
+                  value: 'Disks - IO'
+            -
+              uuid: 97a69586db4e44db84a3b47104db7f1b
+              name: '"{#DISKIO_DEVICE}" - 15 Minute Load Average'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-DISKIO-MIB::diskIOLA15.{#SNMPINDEX}'
+              key: 'diskIO.LoadAverage15Min[{#SNMPINDEX}]'
+              delay: '30'
+              description: '15 Minute Load Average for "{#DISKIO_DEVICE}"'
+              tags:
+                -
+                  tag: Application
+                  value: 'Disks - IO'
+            -
+              uuid: 9e21b7b693a74e9bac8dc79c533e7296
+              name: '"{#DISKIO_DEVICE}" - Number Reads'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-DISKIO-MIB::diskIOReads.{#SNMPINDEX}'
+              key: 'diskIO.Reads[{#SNMPINDEX}]'
+              delay: '30'
+              description: 'Counter of Disk Reads since boot for "{#DISKIO_DEVICE}"'
+              tags:
+                -
+                  tag: Application
+                  value: 'Disks - IO'
+            -
+              uuid: f1f5439cead64847b56c3d01e209bdb0
+              name: '"{#DISKIO_DEVICE}" - Number Writes'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-DISKIO-MIB::diskIOWrites.{#SNMPINDEX}'
+              key: 'diskIO.Writes[{#SNMPINDEX}]'
+              delay: '30'
+              description: 'Counter of Disk Writes since boot for "{#DISKIO_DEVICE}"'
+              tags:
+                -
+                  tag: Application
+                  value: 'Disks - IO'
+        -
+          uuid: c51ceb35f02f41739bf2e10153a5e2c6
+          name: 'Load Averages'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#LA_INDEX},UCD-SNMP-MIB::laIndex,{#LA_NAME},UCD-SNMP-MIB::laNames]'
+          key: loadAverages.Discovery
+          delay: '300'
+          lifetime: 7d
+          item_prototypes:
+            -
+              uuid: 7d3ba079872b4bc08c999dca0f45299b
+              name: '"{#LA_NAME}" - Error Flag'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::laErrorFlag.{#SNMPINDEX}'
+              key: 'loadAverages.ErrorFlag[{#SNMPINDEX}]'
+              delay: '300'
+              status: DISABLED
+              description: |
+                A Error flag to indicate the load-average has crossed its threshold value defined in the snmpd.conf file.
+                
+                It is set to 1 if the threshold is crossed, 0 otherwise.
+              tags:
+                -
+                  tag: Application
+                  value: Resources
+            -
+              uuid: 50691d63a17b445899f03ec7ddc8e64c
+              name: '"{#LA_NAME}" - Error Message'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::laErrMessage.{#SNMPINDEX}'
+              key: 'loadAverages.ErrorMessage[{#SNMPINDEX}]'
+              delay: '300'
+              history: 30d
+              trends: '0'
+              status: DISABLED
+              value_type: TEXT
+              description: 'An error message describing the load-average and its surpassed watch-point value.'
+              tags:
+                -
+                  tag: Application
+                  value: Resources
+            -
+              uuid: 798861ac439b483da5e3986f7e26b2e3
+              name: '"{#LA_NAME}" - Load'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::laLoad.{#SNMPINDEX}'
+              key: 'loadAverages.Load[{#SNMPINDEX}]'
+              delay: '300'
+              value_type: FLOAT
+              description: 'The `{#LA_NAME}` minute load average.'
+              tags:
+                -
+                  tag: Application
+                  value: Resources
+              trigger_prototypes:
+                -
+                  uuid: 5459567e231047e5b92839792c97025c
+                  expression: 'avg(/Cyberhound - Template/loadAverages.Load[{#SNMPINDEX}],{$LOAD_AVERAGE_CPU_LOAD_WARNING_TIME:"{#LA_NAME}"})>{$LOAD_AVERAGE_CPU_LOAD_WARNING_THRESHOLD:"{#LA_NAME}"}'
+                  name: 'Processor load is high (> $1 over {$LOAD_AVERAGE_CPU_LOAD_WARNING_TIME:"{#LA_NAME}"} on {HOST.NAME}'
+                  priority: WARNING
+                  description: 'The average CPU load is over `{$LOAD_AVERAGE_CPU_LOAD_WARNING_TIME:"{#LA_NAME}"}` for the last `{$LOAD_AVERAGE_CPU_LOAD_WARNING_TIME:"{#LA_NAME}}`.'
+                  dependencies:
+                    -
+                      name: 'Processor load is very high (> $1 over {$LOAD_AVERAGE_CPU_LOAD_HIGH_TIME:"{#LA_NAME}"} on {HOST.NAME}'
+                      expression: 'avg(/Cyberhound - Template/loadAverages.Load[{#SNMPINDEX}],{$LOAD_AVERAGE_CPU_LOAD_HIGH_TIME:"{#LA_NAME}"})>{$LOAD_AVERAGE_CPU_LOAD_HIGH_THRESHOLD:"{#LA_NAME}"}'
+                -
+                  uuid: 34790f6cec484de8bcb3f96a48320ad6
+                  expression: 'avg(/Cyberhound - Template/loadAverages.Load[{#SNMPINDEX}],{$LOAD_AVERAGE_CPU_LOAD_HIGH_TIME:"{#LA_NAME}"})>{$LOAD_AVERAGE_CPU_LOAD_HIGH_THRESHOLD:"{#LA_NAME}"}'
+                  name: 'Processor load is very high (> $1 over {$LOAD_AVERAGE_CPU_LOAD_HIGH_TIME:"{#LA_NAME}"} on {HOST.NAME}'
+                  priority: HIGH
+                  description: 'The average CPU load is over `{$LOAD_AVERAGE_CPU_LOAD_HIGH_TIME:"{#LA_NAME}"}` for the last `{$LOAD_AVERAGE_CPU_LOAD_HIGH_TIME:"{#LA_NAME}"}`.'
+            -
+              uuid: 43e77ea2361d420b8cf2a12765c2f0a2
+              name: '"{#LA_NAME}" - Watch Point'
+              type: SNMP_AGENT
+              snmp_oid: 'UCD-SNMP-MIB::laConfig.{#SNMPINDEX}'
+              key: 'loadAverages.WatchPoint[{#SNMPINDEX}]'
+              delay: '300'
+              history: 7d
+              trends: 30d
+              value_type: FLOAT
+              tags:
+                -
+                  tag: Application
+                  value: Resources
+          trigger_prototypes:
+            -
+              uuid: 2b84a52799c14c8299bc3eb2bbe26ac4
+              expression: 'last(/Cyberhound - Template/loadAverages.Load[{#SNMPINDEX}])>last(/Cyberhound - Template/loadAverages.WatchPoint[{#SNMPINDEX}])'
+              name: 'Processor load {#LA_NAME} is higher than the system watch point ({ITEM.VALUE1} > {ITEM.VALUE2}) on {HOST.NAME})'
+              priority: WARNING
+              description: 'The load average is higher than the system configured watch point (`UCD-SNMP-MIB::laConfig`).'
+              dependencies:
+                -
+                  name: 'Processor load is high (> $1 over {$LOAD_AVERAGE_CPU_LOAD_WARNING_TIME:"{#LA_NAME}"} on {HOST.NAME}'
+                  expression: 'avg(/Cyberhound - Template/loadAverages.Load[{#SNMPINDEX}],{$LOAD_AVERAGE_CPU_LOAD_WARNING_TIME:"{#LA_NAME}"})>{$LOAD_AVERAGE_CPU_LOAD_WARNING_THRESHOLD:"{#LA_NAME}"}'
+          graph_prototypes:
+            -
+              uuid: f5b50b05764540ec8c2e383e78ed724b
+              name: '"{#LA_NAME}" - CPU Load'
+              graph_items:
+                -
+                  color: 199C0D
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'loadAverages.Load[{#SNMPINDEX}]'
+                -
+                  sortorder: '1'
+                  color: F63100
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'loadAverages.WatchPoint[{#SNMPINDEX}]'
+        -
+          uuid: 61abac8f8ce5481cb985d879a180c45f
+          name: 'Network Interfaces'
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#IF_INDEX},IF-MIB::ifIndex,{#IF_OPER_STATUS},IF-MIB::ifOperStatus,{#IF_ADMIN_STATUS},IF-MIB::ifAdminStatus,{#IF_ALIAS},IF-MIB::ifAlias,{#IF_NAME},IF-MIB::ifName,{#IF_DESC},IF-MIB::ifDescr,{#IF_TYPE},IF-MIB::ifType]'
+          key: networkInterface.Discovery
+          delay: 1h
+          item_prototypes:
+            -
+              uuid: 41bd635ff57c4357ae5bc9262f1e2e2e
+              name: '{#IF_NAME} - Info - Status - Administrative'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifAdminStatus.{#SNMPINDEX}'
+              key: 'networkInterface.AdminStatus[{#SNMPINDEX}]'
+              delay: 30m
+              description: |
+                MIB: IF-MIB
+                The desired state of {#IF_NAME}.  The testing(3) state indicates that no operational packets can be passed.  When a managed system initializes, all interfaces start with ifAdminStatus in the down(2) state.  As a result of either explicit management action or per configuration information retained by the managed system, ifAdminStatus is then changed to either the up(1) or testing(3) states (or remains in the down(2) state).
+              valuemap:
+                name: 'IF-MIB::ifAdminStatus'
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 4a7509d821a64c6296950ca7a38aa7bd
+              name: '{#IF_NAME} - Received - Bits'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifInOctets.{#SNMPINDEX}'
+              key: 'networkInterface.BitsReceived[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on the {#IF_NAME}, including framing characters.
+                
+                Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 709802e3c91e40c5b787ea6a584a7363
+              name: '{#IF_NAME} - Sent - Bits'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifOutOctets.{#SNMPINDEX}'
+              key: 'networkInterface.BitsSent[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The total number of octets transmitted out of {#IF_NAME}, including framing characters.
+                
+                Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: f94d4e8a3a924dacac2e82280b2e5ab3
+              name: '{#IF_NAME} - Received - Broadcast Packets'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifInBroadcastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.BroadcastPacketsReceived[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                "The number of packets received on interface {#IF_NAME}, delivered by this sub-layer to a higher (sub-)layer, which were addressed to a broadcast address at this sub-layer.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: dd8d2901250641469bbc56df344526e1
+              name: '{#IF_NAME} - Sent - Broadcast Packets'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifOutBroadcastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.BroadcastPacketsSent[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The total number of packets that higher-level protocols requested be transmitted on interface {#IF_NAME}, and which were addressed to a broadcast address at this sub-layer, including those that were discarded or not sent.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: c5eb27d3abaa4c549a0ea663d1505ea1
+              name: '{#IF_NAME} - Info - Connector Present'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifConnectorPresent.{#SNMPINDEX}'
+              key: 'networkInterface.ConnectorPresent[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                This object has the value 'true(1)' if {#IF_NAME} sublayer has a physical connector and the value 'false(2)' otherwise.
+              valuemap:
+                name: 'IF-MIB::ifConnectorPresent'
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: a4807a571f4146188486ed0aad948d01
+              name: '{#IF_NAME} - Received - Bits (High Count)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHCInOctets.{#SNMPINDEX}'
+              key: 'networkInterface.HCBitsReceived[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                The total number of octets received on {#IF_NAME}, including framing characters.  This object is a 64-bit version of ifInOctets
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 01c913a1cf974b68b9917e6f5764de56
+              name: '{#IF_NAME} - Sent - Bits (High Count)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHCOutOctets.{#SNMPINDEX}'
+              key: 'networkInterface.HCBitsSent[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                "The total number of octets transmitted out of the interface {#IF_NAME}, including framing characters.  This object is a 64-bit version of ifOutOctets.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 501f415983c148079172d7f9ee4102cb
+              name: '{#IF_NAME} - Received - Broadcast Packets (High Count)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHCInBroadcastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.HCBroadcastPacketsReceived[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                "The number of packets received on interface {#IF_NAME}, delivered by this sub-layer to a higher (sub-)layer, which were addressed to a broadcast address at this sub-layer.  
+                
+                This object is a 64-bit version  of ifInBroadcastPkts
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: d9b6d03925ce4725b34254f717ad5953
+              name: '{#IF_NAME} - Sent - Broadcast Packets (High Count)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHCOutBroadcastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.HCBroadcastPacketsSent[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The total number of packets that higher-level protocols requested be transmitted on interface {#IF_NAME}, and which were addressed to a broadcast address at this sub-layer, including those that were discarded or not sent.
+                
+                This object is a 64-bit version of ifOutBroadcastPkts.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 3a09c775d5084af78cf741178d606388
+              name: '{#IF_NAME} - Received - Multicast Packets (High Count)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHCInMulticastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.HCMulticastPacketsReceived[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The number of packets received on {#IF_NAME}, delivered by this sub-layer to a higher (sub-)layer, which were addressed to a multicast address at this sub-layer.  For a MAC layer protocol, this includes both Group and Functional addresses.  
+                
+                This object is a 64-bit version of ifInMulticastPkts
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: d264a37e63554c2d9a23873dac1cdb1c
+              name: '{#IF_NAME} - Sent - Multicast Packets (High Count)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHCInMulticastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.HCMulticastPacketsSent[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The total number of packets that higher-level protocols requested be transmitted by interface {#IF_NAME}, and which were addressed to a multicast address at this sub-layer, including those that were discarded or not sent.  For a MAC layer protocol, this includes both Group and Functional addresses.
+                
+                This object is a 64-bit version of ifOutMulticastPkts.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 19b9e3aa4d054fd9bd811fb127a336e0
+              name: '{#IF_NAME} - Received - Unicast Packets (High Count)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHCInUcastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.HCUnicastPacketsReceived[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The number of packets recieved by {#IF_NAME}, delivered by this sub-layer to a higher (sub-)layer, which were not addressed to a multicast or broadcast address at this sub-layer.  
+                
+                This object is a 64-bit version of ifInUcastPkts
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: de1a90083bf14981a9d04dcffb4670db
+              name: '{#IF_NAME} - Sent - Unicast Packets (High Count)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHCOutUcastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.HCUnicastPacketsSent[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The total number of packets that higher-level protocols  requested be transmitted by interface {#IF_NAME}, and which were not addressed to a multicast or broadcast address at this sub-layer, including those that were discarded or not sent.  
+                
+                This object is a 64-bit version of ifOutUcastPkts.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: d4f46f609d4148ac9b530add860f0184
+              name: '{#IF_NAME} - Info - Speed (Speed in Mb/s)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifHighSpeed.{#SNMPINDEX}'
+              key: 'networkInterface.HighSpeed[{#SNMPINDEX}]'
+              delay: '30'
+              trends: '0'
+              description: |
+                MIB: IF-MIB
+                An estimate of {#IF_NAME}'s current bandwidth in units of 1,000,000 bits per second.  If this object reports a value of `n' then the speed of the interface is somewhere in the range of `n-500,000' to `n+499,999'.  For interfaces which do not vary in bandwidth or for those where no accurate estimation can be made, this object should contain the nominal bandwidth.  For a sub-layer which has no concept of bandwidth, this object should be zero.
+              valuemap:
+                name: 'IF-MIB::ifHighSpeed'
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 569fc87d93a747ddbc635c84f933a166
+              name: '{#IF_NAME} - Received - Discards'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifInDiscards.{#SNMPINDEX}'
+              key: 'networkInterface.InDiscards[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                The number of inbound packets received on {#IF_NAME} which were chosen to be discarded even though no errors had been detected to prevent their being deliverable to a higher-layer protocol.  One possible reason for discarding such a packet could be to free up buffer space.
+                
+                 Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: bec928de8a554c97889145ad34adb011
+              name: '{#IF_NAME} - Received - Errors'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifInErrors.{#SNMPINDEX}'
+              key: 'networkInterface.InErrors[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                The number of inbound packets received on {#IF_NAME} that contained errors preventing them from being deliverable to a higher-layer protocol.  For character- oriented or fixed-length interfaces, the number of inbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol.
+                
+                 Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: f8f5e016cf8945f7a8e792e59400e8df
+              name: '{#IF_NAME} - Info - Interface Type'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifType.{#SNMPINDEX}'
+              key: 'networkInterface.InterfaceType[{#SNMPINDEX}]'
+              delay: 30m
+              trends: '0'
+              value_type: TEXT
+              description: |
+                MIB: IF-MIB
+                The type of interface for {#IF_NAME} . Additional values for ifType are assigned by the Internet Assigned Numbers Authority (IANA), through updating the syntax of the IANAifType textual convention.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: b7928d2d6a934f10a0ea960a600646b3
+              name: '{#IF_NAME} - Received - Unknown Protocols'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifInUnknownProtos.{#SNMPINDEX}'
+              key: 'networkInterface.InUnkownProtocols[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                The number of packets received on {#IF_NAME} which were discarded because of an unknown or unsupported protocol.  For character-oriented or fixed-length interfaces that support protocol multiplexing the number of transmission units received via the interface which were discarded because of an unknown or unsupported protocol.  For any interface that does not support protocol multiplexing, this counter will always be 0.
+                
+                 Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: cd4f93e24b4b4127b8cacb657c5c7d07
+              name: '{#IF_NAME} - Info - Last Change'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifLastChange.{#SNMPINDEX}'
+              key: 'networkInterface.LastChange[{#SNMPINDEX}]'
+              status: DISABLED
+              units: uptime
+              description: |
+                MIB: IF-MIB
+                The value of sysUpTime at the time {#IF_NAME} entered its current operational state.  If the current state was entered prior to the last re-initialization of the local network management subsystem, then this object contains a zero value.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 818a7403e5b248c5813c8264f2513fbf
+              name: '{#IF_NAME} - Info - Physical Address'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifPhysAddress.{#SNMPINDEX}'
+              key: 'networkInterface.MAC[{#SNMPINDEX}]'
+              delay: 30m
+              trends: '0'
+              value_type: TEXT
+              description: |
+                MIB: IF-MIB
+                {#IF_NAME}'s address at its protocol sub-layer.  For example, for an 802.x interface, this object normally contains a MAC address.  The interface's media-specific MIB must define the bit and byte ordering and the format of the value of this object.  For interfaces which do not have such an address (e.g., a serial line), this object should contain an octet string of zero length.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 9cc03df56c5d4342a3f95971d1835fa9
+              name: '{#IF_NAME} - Info - MTU'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifMtu.{#SNMPINDEX}'
+              key: 'networkInterface.MTU[{#SNMPINDEX}]'
+              delay: 30m
+              trends: '0'
+              description: |
+                MIB: IF-MIB
+                The size of the largest packet which can be sent/received on {#IF_NAME}, specified in octets.  For interfaces that are used for transmitting network datagrams, this is the size of the largest network datagram that can be sent on the interface.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 12f57a0752dc4f438c97673105d4e7a2
+              name: '{#IF_NAME} - Received - Multicast Packets'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifInMulticastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.MulticastPacketsReceived[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The number of packets received on {#IF_NAME}, delivered by this sub-layer to a higher (sub-)layer, which were addressed to a multicast address at this sub-layer.  For a MAC layer protocol, this includes both Group and Functional addresses.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: b67657bf08ac4ec6874746ac0b3ffd59
+              name: '{#IF_NAME} - Sent - Multicast Packets'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifOutMulticastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.MulticastPacketsSent[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The total number of packets that higher-level protocols requested be transmitted by interface {#IF_NAME}, and which were addressed to a multicast address at this sub-layer, including those that were discarded or not sent.  For a MAC layer protocol, this includes both Group and Functional addresses.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 92986c670d51466481d3f69931d0af6b
+              name: '{#IF_NAME} - Info - Status - Operational'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifOperStatus.{#SNMPINDEX}'
+              key: 'networkInterface.OperStatus[{#SNMPINDEX}]'
+              delay: 30m
+              description: |
+                MIB: IF-MIB
+                The current operational state of {#IF_NAME}.  The testing(3) state indicates that no operational packets can be passed.  If ifAdminStatus is down(2) then ifOperStatus should be down(2).  If ifAdminStatus is changed to up(1) then ifOperStatus should change to up(1) if the interface is ready to transmit and receive network traffic; it should change to dormant(5) if the interface is waiting for external actions (such as a serial line waiting for an  incoming connection); it should remain in the down(2) state if and only if there is a fault that prevents it from going to the up(1) state; it should remain in the notPresent(6) state if the interface has missing (typically, hardware) components.
+              valuemap:
+                name: 'IF-MIB::ifOperStatus'
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 486ff15722454f75bcc0acb0bdae7c84
+              name: '{#IF_NAME} - Sent - Discards'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifOutDiscards.{#SNMPINDEX}'
+              key: 'networkInterface.OutDiscards[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                The number of outbound packets on {#IF_NAME} which were chosen to be discarded even though no errors had been detected to prevent their being transmitted.  One possible reason for discarding such a packet could be to free up buffer space.
+                
+                 Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 210f7083eeda4bc48fb2e38bc479de3b
+              name: '{#IF_NAME} - Sent - Errors'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifOutErrors.{#SNMPINDEX}'
+              key: 'networkInterface.OutErrors[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                The number of outbound packets on {#IF_NAME}, that could not be transmitted because of errors. For character-oriented or fixed-length interfaces, the  number of outbound transmission units that could not be transmitted because of errors.
+                
+                 Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 55f4b8ecf4774412809b2e618eab894b
+              name: '{#IF_NAME} - Sent - Queue Length'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifOutQLen.{#SNMPINDEX}'
+              key: 'networkInterface.OutQueue[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                The length of the output packet queue on {#IF_NAME} (in packets).
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 45d16b8215c84bf2952e79b0e39cc249
+              name: '{#IF_NAME} - Info - Promiscuous Mode'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifPromiscuousMode.{#SNMPINDEX}'
+              key: 'networkInterface.PromiscuousMode[{#SNMPINDEX}]'
+              delay: '30'
+              description: |
+                MIB: IF-MIB
+                This object has a value of false(2) if {#IF_NAME} only accepts packets/frames that are addressed to this station. This object has a value of true(1) when the station accepts all packets/frames transmitted on the media.  The value true(1) is only legal on certain types of media.  If legal,  setting this object to a value of true(1) may require the interface to be reset before becoming effective.
+              valuemap:
+                name: 'IF-MIB::ifPromiscuousMode'
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 064161ef71fe48608adc668d40f4f472
+              name: '{#IF_NAME} - Info - Speed (Speed in b/s)'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifSpeed.{#SNMPINDEX}'
+              key: 'networkInterface.Speed[{#SNMPINDEX}]'
+              delay: '30'
+              trends: '0'
+              status: DISABLED
+              units: b/s
+              description: |
+                MIB: IF-MIB
+                An estimate of the {#IF_NAME}'s current bandwidth in bits per second.  For interfaces which do not vary in bandwidth or for those where no accurate estimation can be made, this object should contain the nominal bandwidth.  If the bandwidth of the interface is greater than the maximum value
+                 reportable by this object then this object should report its maximum value (4,294,967,295) and ifHighSpeed must be used to report the interace's speed.  For a sub-layer which has no concept of bandwidth, this object should be zero.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 216f04de5e4e480189b54457fe2d0a62
+              name: '{#IF_NAME} - Received - Unicast Packets'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifInUcastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.UnicastPacketsReceived[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The number of packets received by {#IF_NAME}, delivered by this sub-layer to a higher (sub-)layer, which were not addressed to a multicast or broadcast address at this sub-layer.
+                
+                Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+            -
+              uuid: 911b7cf6270d41b38ff2b3c0bd4550a4
+              name: '{#IF_NAME} - Sent - Unicast Packets'
+              type: SNMP_AGENT
+              snmp_oid: 'IF-MIB::ifOutUcastPkts.{#SNMPINDEX}'
+              key: 'networkInterface.UnicastPacketsSent[{#SNMPINDEX}]'
+              delay: '30'
+              status: DISABLED
+              description: |
+                MIB: IF-MIB
+                The total number of packets transmitted on {#IF_NAME} that higher-level protocols requested be transmitted, and which were not addressed to a multicast or broadcast address at this sub-layer, including those that were discarded or not sent.
+                
+                Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
+              tags:
+                -
+                  tag: Application
+                  value: 'Network Interfaces'
+          graph_prototypes:
+            -
+              uuid: 932f1880e288426f96eb822dcdecd9cc
+              name: '{#IF_NAME} - Inbound Packet Breakdown'
+              graph_items:
+                -
+                  color: 199C0D
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCBitsReceived[{#SNMPINDEX}]'
+                -
+                  sortorder: '1'
+                  color: F63100
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCBroadcastPacketsReceived[{#SNMPINDEX}]'
+                -
+                  sortorder: '2'
+                  drawtype: FILLED_REGION
+                  color: 2774A4
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.InDiscards[{#SNMPINDEX}]'
+                -
+                  sortorder: '3'
+                  color: F7941D
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.InErrors[{#SNMPINDEX}]'
+                -
+                  sortorder: '4'
+                  color: FC6EA3
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCMulticastPacketsReceived[{#SNMPINDEX}]'
+                -
+                  sortorder: '5'
+                  color: 6C59DC
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCUnicastPacketsReceived[{#SNMPINDEX}]'
+                -
+                  sortorder: '6'
+                  color: C7A72D
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.InUnkownProtocols[{#SNMPINDEX}]'
+            -
+              uuid: 3f6cc86a4a084a3daceeb294d8a578a3
+              name: '{#IF_NAME} - Outbound Packet Breakdown'
+              graph_items:
+                -
+                  color: 199C0D
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCBroadcastPacketsSent[{#SNMPINDEX}]'
+                -
+                  sortorder: '1'
+                  color: F63100
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.OutDiscards[{#SNMPINDEX}]'
+                -
+                  sortorder: '2'
+                  color: 2774A4
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.OutErrors[{#SNMPINDEX}]'
+                -
+                  sortorder: '3'
+                  color: F7941D
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCMulticastPacketsSent[{#SNMPINDEX}]'
+                -
+                  sortorder: '4'
+                  color: FC6EA3
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCUnicastPacketsSent[{#SNMPINDEX}]'
+            -
+              uuid: 18df38858a5747589c27064305a2d4c0
+              name: '{#IF_NAME} - Traffic'
+              yaxismax: '100000000'
+              ymin_type_1: FIXED
+              ymax_type_1: FIXED
+              graph_items:
+                -
+                  drawtype: GRADIENT_LINE
+                  color: 199C0D
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCBitsReceived[{#SNMPINDEX}]'
+                -
+                  sortorder: '1'
+                  drawtype: GRADIENT_LINE
+                  color: F63100
+                  item:
+                    host: 'Cyberhound - Template'
+                    key: 'networkInterface.HCBitsSent[{#SNMPINDEX}]'
+      httptests:
+        -
+          uuid: 7f20e8fd39b845549982d5b4d483e39c
+          name: 'Web Interfaces'
+          agent: 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36'
+          steps:
+            -
+              name: 'Admin Interface'
+              url: 'https://wpsc.chsecure.zone'
+            -
+              name: 'Live Interface'
+              url: 'http://live.localnetwork.zone/livezone/'
+            -
+              name: 'Authentication Interface'
+              url: 'https://auth.localnetwork.zone'
+            -
+              name: 'Certificate Installer Interface'
+              url: 'http://cert.localnetwork.zone/certcheck/install/'
+          tags:
+            -
+              tag: Application
+              value: 'Web Interfaces'
+      macros:
+        -
+          macro: '{$LINK_ERROR}'
+          value: '90'
+          description: 'Percentage of Link Speed utilised to generate error'
+        -
+          macro: '{$LINK_SPEED}'
+          value: '100000000.00'
+          description: 'Link Speed For Internet Connection in b/s'
+        -
+          macro: '{$LINK_WARN}'
+          value: '75'
+          description: 'Percentage of Link Speed utilised to generate warning'
+        -
+          macro: '{$LOAD_AVERAGE_CPU_LOAD_HIGH_THRESHOLD}'
+          value: '15'
+        -
+          macro: '{$LOAD_AVERAGE_CPU_LOAD_HIGH_TIME}'
+          value: 30m
+        -
+          macro: '{$LOAD_AVERAGE_CPU_LOAD_WARNING_THRESHOLD}'
+          value: '15'
+        -
+          macro: '{$LOAD_AVERAGE_CPU_LOAD_WARNING_TIME}'
+          value: 15m
+      valuemaps:
+        -
+          uuid: 28fc004b2c34460a8fd99edfcebf64df
+          name: 'IF-MIB::ifAdminStatus'
+          mappings:
+            -
+              value: '1'
+              newvalue: Up
+            -
+              value: '2'
+              newvalue: Down
+            -
+              value: '3'
+              newvalue: Testing
+        -
+          uuid: 2d04cf62841940a39cf7f397825b91ba
+          name: 'IF-MIB::ifConnectorPresent'
+          mappings:
+            -
+              value: '1'
+              newvalue: Connected
+            -
+              value: '2'
+              newvalue: 'Not Connected'
+        -
+          uuid: 6b57a7b025844b31949f1b4cd622b536
+          name: 'IF-MIB::ifHighSpeed'
+          mappings:
+            -
+              value: '10'
+              newvalue: '10 Mb/s'
+            -
+              value: '100'
+              newvalue: '100 Mb/s'
+            -
+              value: '1000'
+              newvalue: '1 Gb/s'
+            -
+              value: '2500'
+              newvalue: '2.5 Gb/s'
+            -
+              value: '5000'
+              newvalue: '5 Gb/s'
+            -
+              value: '10000'
+              newvalue: '10 Gb/s'
+            -
+              value: '40000'
+              newvalue: '40 Gb/s'
+        -
+          uuid: ed0158edf98a4170be1c267afe345c59
+          name: 'IF-MIB::ifOperStatus'
+          mappings:
+            -
+              value: '1'
+              newvalue: up
+            -
+              value: '2'
+              newvalue: down
+            -
+              value: '4'
+              newvalue: unknown
+            -
+              value: '5'
+              newvalue: dormant
+            -
+              value: '6'
+              newvalue: notPresent
+            -
+              value: '7'
+              newvalue: lowerLayerDown
+        -
+          uuid: 7e04374b9e334de0a9c29b3cb9e3746c
+          name: 'IF-MIB::ifPromiscuousMode'
+          mappings:
+            -
+              value: '1'
+              newvalue: Enabled
+            -
+              value: '2'
+              newvalue: Disabled
+  triggers:
+    -
+      uuid: 396f09e7344e44bf88d8809c836040fe
+      expression: |
+        last(/Cyberhound - Template/memory.Available)
+          < {$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_AVAILABLE_WARNING_THRESHOLD}
+        
+        and
+        
+        last(/Cyberhound - Template/memory.PercentageAvailable)
+          < {$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_PAVAILABLE_WARNING_THRESHOLD}
+      name: 'Available memory on {HOST.NAME} is low (< $2 %, {ITEM.VALUE1} bytes available)'
+      priority: WARNING
+      description: 'The available memory on the system is below ` {$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_AVAILABLE_WARNING_THRESHOLD}` and `{$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_PAVAILABLE_WARNING_THRESHOLD}` percent.'
+      dependencies:
+        -
+          name: 'Available memory on {HOST.NAME} is very low (< $2 %, {ITEM.VALUE1} bytes available)'
+          expression: |
+            last(/Cyberhound - Template/memory.Available)
+              < {$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_AVAILABLE_HIGH_THRESHOLD}
+            
+            and
+            
+            last(/Cyberhound - Template/memory.PercentageAvailable)
+              < {$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_PAVAILABLE_HIGH_THRESHOLD}
+    -
+      uuid: fe310c68e7354a61b3e0d3e19b450dbb
+      expression: |
+        last(/Cyberhound - Template/memory.Available)
+          < {$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_AVAILABLE_HIGH_THRESHOLD}
+        
+        and
+        
+        last(/Cyberhound - Template/memory.PercentageAvailable)
+          < {$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_PAVAILABLE_HIGH_THRESHOLD}
+      name: 'Available memory on {HOST.NAME} is very low (< $2 %, {ITEM.VALUE1} bytes available)'
+      priority: HIGH
+      description: 'The available memory on the system is below ` {$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_AVAILABLE_HIGH_THRESHOLD}` and `{$SNMPV2_UCD_SNMP_MIB_MEMORY_MEMORY_PAVAILABLE_HIGH_THRESHOLD}` percent.'
+  graphs:
+    -
+      uuid: 25970aa2619d468499927bada5afab76
+      name: 'Memory Usage'
+      graph_items:
+        -
+          color: 00DD00
+          item:
+            host: 'Cyberhound - Template'
+            key: memory.Available
+        -
+          sortorder: '1'
+          color: 2774A4
+          item:
+            host: 'Cyberhound - Template'
+            key: memory.Buffer
+        -
+          sortorder: '2'
+          color: A54F10
+          item:
+            host: 'Cyberhound - Template'
+            key: memory.Cached
+        -
+          sortorder: '3'
+          color: 6C59DC
+          item:
+            host: 'Cyberhound - Template'
+            key: memory.Shared
+        -
+          sortorder: '4'
+          color: DD0000
+          item:
+            host: 'Cyberhound - Template'
+            key: memory.Total
