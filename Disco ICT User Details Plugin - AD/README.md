@@ -12,12 +12,13 @@ On a machine that has Active Directory tools installed run as a user that has Do
 
 Upon opening the utility we will need to connect to a domain controller, set the new max page size, and commit the changes, the instructions below will set it to 5000, please be aware that you need to replace <\<ServerName\>> with the actual DNS name of the server, an IP address will simply be rejected.
 
-NTDSUTIL.exe
-LDAP policies
-connections
-connect to server <\<SERVERNAME\>>
-q
-Set MaxPageSize to 5000
-commit
-q
-
+NTDSUTIL.exe\
+LDAP policies\
+connections\
+connect to server <\<SERVERNAME\>>\
+q\
+Set MaxPageSize to 5000\
+commit\
+q\
+\
+\
