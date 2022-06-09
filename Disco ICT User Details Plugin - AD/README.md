@@ -20,7 +20,7 @@ connect to server <\<SERVERNAME\>>\
 q\
 Set MaxPageSize to 5000\
 commit\
-q\
+q
 
 
 **Linking AD to MSSQL Server**
