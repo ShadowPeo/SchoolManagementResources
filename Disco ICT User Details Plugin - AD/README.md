@@ -24,10 +24,12 @@ q\
 
 
 **Linking AD to MSSQL Server**
+
 Once we can rely on AD to return enough rows we now need to link the AD server to Active Directory, to this end we need to run a script on the SQL server itself. Download and run the script Create-ADSI.sql on your SQL server (I use SQL Management Studio but feel free to use whatever your comfortable with). Replace <\<Username\>> with the username of a user that has the appropriate permissions and <\<Password\>> with the password for that user.\
 
 
 **Creating the View**
+
 Inside a database of your choice (ensure that the appropriate user has db_datareader permissions to the database, the user is DiscoServiceAccount if your using intergrated authetication as recomended) I put the view in the Disco SQL database so that I do not have to worry about these things.
 
 The code to create the view that I used is included in View.sql please replace the list selection and the OU path with a path appropriate for your school.
