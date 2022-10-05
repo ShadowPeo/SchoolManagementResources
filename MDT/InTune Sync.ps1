@@ -1,3 +1,9 @@
+param 
+    (
+        #School Details
+        [string]$mode = "FirstRun" #Used to define where in the process the script is starting from
+    )
+
 #requires -version 2
 <#
 .SYNOPSIS
@@ -35,11 +41,28 @@ $ErrorActionPreference = "SilentlyContinue"
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+##Temporary Variables used for development and troubleshooting
+$deviceSerial = "R912XZZX" #Exists and assinged
+#$deviceSerial = "R912XDM4" #Exists and not assigned
+#$deviceSerial = "R912XZZXZ" #Does not exist
+
+
 $sLogFile = Join-Path -Path $sLogPath -ChildPath $sLogName
 
+#Snipe-IT Details
+$snipeURL = "<<URL>>" #No trailing /
+$snipeAPIKey = "<<APIKEY>>"
+$snipeRetrivalMaxAttempts = 10 #It will attempt to retrieve the record every 60 seconds, so this is equivilent to minutes
+
+#Active Directory Details
+$adServer = 10.124.224.137
+$adRetrivalMaxAttempts = 10 #It will attempt to retrieve the record every 60 seconds, so this is equivilent to minutes
+
 #Script Variables - Declared to stop it being generated multiple times per run
-
-
+$snipeRetrieval = $false
+$snipeResult = $null #Blank Snipe result
+$adRetrieval = $false
+$adUser = $null
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -48,12 +71,187 @@ function Write-Log ($logMessage)
     Write-Host "$(Get-Date -UFormat '+%Y-%m-%d %H:%M:%S') - $logMessage"
 }
 
+function Set-Startup ($mode)
+{
+    #Copy script to C:\Scripts (Create directory if it does not exist)
+    #Add Script to Scheduled task (removing old one if it exists) with the correct mode flag set
+}
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 #Log-Start -LogPath $sLogPath -LogName $sLogName -ScriptVersion $sScriptVersion
 
+#Do this segment only if the script has not set paramters up
+if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
+    {
+    #Get Serial Number from BIOS
+    #T#$deviceSerial = (Get-CIMInstance Win32_BIOS).SerialNumber
+
+    $checkURL=$snipeURL.Substring((Select-String 'http[s]:\/\/' -Input $snipeURL).Matches[0].Length)
+
+    if ($checkURL.IndexOf('/') -eq -1)
+    {
+        #Test ICMP connection
+        if ((Test-Connection -TargetName $checkURL))
+        {
+            Write-Log "Successfully to Snipe-IT server at address $checkURL"
+        }
+        else 
+        {
+            Write-Log "Cannot connect to Snipe-IT server at address $checkURL exiting"
+            exit
+        }
+    }
+
+    #Create Snipe Headers
+    $snipeHeaders=@{}
+    $snipeHeaders.Add("accept", "application/json")
+    $snipeHeaders.Add("Authorization", "Bearer $snipeAPIKey")
+
+    $whileCounter = 0 #Counter to ensure that the task does not repeat too many times, as defined by the variable above
+
+    while (-not $snipeRetrieval)
+    {
+        if ($whileCounter -ge $snipeRetrivalMaxAttempts)
+        {
+            Write-Log "Cannot complete lookup at this point for $deviceSerial from Snipe-IT, Ending Automated Run"
+            
+        }
+
+        try 
+        {
+            $snipeResult = $null #Blank Snipe result
+            $snipeResult = Invoke-WebRequest -Uri "$snipeURL/api/v1/hardware/byserial/$deviceSerial" -Method GET -Headers $snipeHeaders
+
+            if ($snipeResult.StatusCode -eq 200)
+            {
+                #Covert from result to JSON content
+                $snipeResult = ConvertFrom-JSON($snipeResult.Content)
+
+                if ($snipeResult.total -eq 1)
+                {
+                    if ($whileCounter -lt 1)
+                    {
+                        Write-Log "Sucessfully retrieved device information for $deviceSerial from Snipe-IT"
+                    }
+                    
+                    $snipeResult = $snipeResult.rows[0]
+                    
+                    if ($snipeResult.assigned_to.type -eq "user")
+                    {
+                        Write-Log "Device $deviceSerial is Assigned to $($snipeResult.assigned_to.name) ($($snipeResult.assigned_to.username))"
+                        $snipeRetrieval = $true
+                    }
+                    else 
+                    {
+                        Write-Log "Device $deviceSerial is not assigned to a User, Waiting"
+                        Start-Sleep -Seconds 60
+                        $whileCounter++
+                    }
+                    
+                }
+                elseif ($snipeResult.total -eq 0)
+                {
+                    Write-Log "Device $deviceSerial does not exist in Snipe-IT, Waiting"
+                    Start-Sleep -Seconds 60
+                    $whileCounter++
+                }
+                else 
+                {
+                    Write-Log "More than one device with $deviceSerial exists in Snipe-IT, Exiting"
+                    exit
+                }
+                
+            }
+            else 
+            {
+                Write-Log "Cannot retrieve device $deviceSerial from Snipe-IT due to unknown error, exiting"
+                exit
+            }
+        }
+        catch 
+        {
+            Write-Log $_.Exception
+            exit
+        }
+    }
+
+
+    $whileCounter = 0 #Counter to ensure that the task does not repeat too many times, as defined by the variable above
+
+    while (-not $adRetrieval)
+    {
+        $userID = $snipeResult.assigned_to.username
+        
+        if ($whileCounter -ge $adRetrivalMaxAttempts)
+        {
+            Write-Log "Cannot complete AD lookup at this point for $userID, Ending Automated Run"
+            
+        }
+
+        try 
+        {
+            $adUser = $null #Blank Snipe result
+            
+            $adUser = Get-ADUser 
+
+            if ($snipeResult.StatusCode -eq 200)
+            {
+                #Covert from result to JSON content
+                $snipeResult = ConvertFrom-JSON($snipeResult.Content)
+
+                if ($snipeResult.total -eq 1)
+                {
+                    if ($whileCounter -lt 1)
+                    {
+                        Write-Log "Sucessfully retrieved device information for $deviceSerial from Snipe-IT"
+                    }
+                    
+                    $snipeResult = $snipeResult.rows[0]
+                    
+                    if ($snipeResult.assigned_to.type -eq "user")
+                    {
+                        Write-Log "Device $deviceSerial is Assigned to $($snipeResult.assigned_to.name) ($($snipeResult.assigned_to.username))"
+                        $adRetrieval = $true
+                    }
+                    else 
+                    {
+                        Write-Log "Device $deviceSerial is not assigned to a User, Waiting"
+                        Start-Sleep -Seconds 60
+                        $whileCounter++
+                    }
+                    
+                }
+                elseif ($snipeResult.total -eq 0)
+                {
+                    Write-Log "Device $deviceSerial does not exist in Snipe-IT, Waiting"
+                    Start-Sleep -Seconds 60
+                    $whileCounter++
+                }
+                else 
+                {
+                    Write-Log "More than one device with $deviceSerial exists in Snipe-IT, Exiting"
+                    exit
+                }
+                
+            }
+            else 
+            {
+                Write-Log "Cannot retrieve device $deviceSerial from Snipe-IT due to unknown error, exiting"
+                exit
+            }#>
+        }
+        catch 
+        {
+            Write-Log $_.Exception
+            exit
+        }
+    }
+
+}
+
 #Lookup Assignment in Snipe
-    #If not assigned, do loop until X minutes or is assigned, check every Y minutes
+    #If not assigned, do loop until X iterations (minutes) are complete or is assigned, check every Y minutes
         #If X is hit then put script into first logon (or perhaps startup) to run again
             #If this first startup and X expires then ask for username to assign (needs to accept both SAM account name and UPN) or type shared to setup as a shared device (deletes script from login)
                 #Assign Device in Snipe after ensuring it exists in AD, may need to force a sync
