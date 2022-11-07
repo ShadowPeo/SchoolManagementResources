@@ -39,23 +39,18 @@ $ErrorActionPreference = "SilentlyContinue"
 
 #Dot Source required Function Libraries
 
+#Modules
+Import-Module "$PSScriptRoot/Config.ps1" #Contains protected data (API Keys, URLs etc)
+Import-Module "$PSScriptRoot/DevEnv.ps1" ##Temporary Variables used for development and troubleshooting
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
-
-##Temporary Variables used for development and troubleshooting
-$deviceSerial = "R912XZZX" #Exists and assinged
-#$deviceSerial = "R912XDM4" #Exists and not assigned
-#$deviceSerial = "R912XZZXZ" #Does not exist
-
 
 $sLogFile = Join-Path -Path $sLogPath -ChildPath $sLogName
 
 #Snipe-IT Details
-$snipeURL = "<<URL>>" #No trailing /
-$snipeAPIKey = "<<APIKEY>>"
 $snipeRetrivalMaxAttempts = 10 #It will attempt to retrieve the record every 60 seconds, so this is equivilent to minutes
 
 #Active Directory Details
-$adServer = 10.124.224.137
 $adRetrivalMaxAttempts = 10 #It will attempt to retrieve the record every 60 seconds, so this is equivilent to minutes
 
 #Script Variables - Declared to stop it being generated multiple times per run
