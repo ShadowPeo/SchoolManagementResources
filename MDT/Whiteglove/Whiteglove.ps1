@@ -75,9 +75,32 @@ function Set-Startup ($mode)
     #Add Script to Scheduled task (removing old one if it exists) with the correct mode flag set
 }
 
+function Set-RegistryKey 
+{
+    param (
+        [Parameter(Mandatory=$true)][string]$registryPath,
+        [Parameter(Mandatory=$true)][string]$name,
+        [Parameter(Mandatory=$true)][string]$value,
+        [Parameter(Mandatory=$true)][string]$type
+    )
+
+    if(!(Test-Path $registryPath))
+    {
+        New-Item -Path $registryPath -Force | Out-Null
+    }
+    New-ItemProperty -Path $registryPath -Name $name -Value $value -PropertyType $type -Force | Out-Null
+
+}
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 #Log-Start -LogPath $sLogPath -LogName $sLogName -ScriptVersion $sScriptVersion
+
+#Check to see if this is a MDT Run
+if (-not [string]::IsNullOrWhiteSpace($TSEnv:TASKSEQUENCEID))
+{
+    $script:taskSequence = $true
+}
 
 #Do this segment only if the script has not set paramters up
 if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
@@ -173,27 +196,34 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
     }
 
     $UserResult = $null #Blank User result
-    $userTitle = Invoke-RestMethod http://7893app02.curric.western-port-sc.wan:5000/user/get/title/MOR0049%40westernportsc.vic.edu.au
+    $userTitle = Invoke-RestMethod http://7893app02.curric.western-port-sc.wan:5000/user/get/title/$($snipeResult.assigned_to.username)
     
     if ($null -ne $userTitle -and ($userTitle -eq "Student" -or $userTitle -eq "Future Student"))
     {
         Write-Log "User is a $userTitle, Continuing"
+        $workingPassword = Invoke-RestMethod http://7893app02.curric.western-port-sc.wan:5000/user/reset/stupass/$($snipeResult.assigned_to.username)
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod http://7893app02.curric.western-port-sc.wan:5000/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword" -Value $workingPassword -type "String"
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -Value "CURRIC" -type "String"
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount" -Value 0 -type "String"
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon" -Value 1 -type "String"
     }
     else #if ($null -eq $userTitle)
     {
         Write-Log "Unable to find a valid user or title for $($snipeResult.assigned_to.name)"
+        ##TODO Wait for Title
     }
 }
 
 
-#Lookup Assignment in Snipe - DONE
-    #If not assigned, do loop until X iterations (minutes) are complete or is assigned, check every Y minutes - Loop Done, Exit/Remdiation not done
+#^Lookup Assignment in Snipe
+    #*If not assigned, do loop until X iterations (minutes) are complete or is assigned, check every Y minutes - Loop Done, Exit/Remdiation not done
         #If X is hit then put script into first logon (or perhaps startup) to run again
             #If this first startup and X expires then ask for username to assign (needs to accept both SAM account name and UPN) or type shared to setup as a shared device (deletes script from login)
                 #Assign Device in Snipe after ensuring it exists in AD, may need to force a sync
-#Lookup User in AD, Ensure exists (should if they are in Snipe), need to lookup based upon UPN as that is the Snipe Username, allow for using SAMAccountName as well though)
-    #Ensure User is Student (or Future Student)
-    #Reset Password to known password (Dinopass)
+#^Lookup User in AD, Ensure exists (should if they are in Snipe), need to lookup based upon UPN as that is the Snipe Username, allow for using SAMAccountName as well though)
+    #^Ensure User is Student (or Future Student) DONE
+    #^Reset Password to known password (Dinopass) DONE
 
 #Add Registry Keys for auto-login
 #HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon AutoAdminLogon REG_SZ 1 
