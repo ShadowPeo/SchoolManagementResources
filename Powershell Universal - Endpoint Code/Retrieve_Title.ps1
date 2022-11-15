@@ -1,6 +1,11 @@
 
 # Enter your script to process requests.
 
+if ([string]::IsNullOrWhiteSpace($userid) -or $userID -eq ":userid")
+{
+    return "ERROR - No User ID Provided"
+}
+
 $adUsers = @()
 
 if ([System.Web.HttpUtility]::UrlDecode($userid) -match "^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$")

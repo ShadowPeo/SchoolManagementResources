@@ -172,75 +172,17 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
         }
     }
 
-<#
-    $whileCounter = 0 #Counter to ensure that the task does not repeat too many times, as defined by the variable above
-
-    while (!$adRetrieval)
+    $UserResult = $null #Blank User result
+    $userTitle = Invoke-RestMethod http://7893app02.curric.western-port-sc.wan:5000/user/get/title/MOR0049%40westernportsc.vic.edu.au
+    
+    if ($null -ne $userTitle -and ($userTitle -eq "Student" -or $userTitle -eq "Future Student"))
     {
-        $userID = $snipeResult.assigned_to.username
-        
-        if ($whileCounter -ge $adRetrivalMaxAttempts)
-        {
-            Write-Log "Cannot complete AD lookup at this point for $userID, Ending Automated Run"
-            Exit
-        }
-
-        try 
-        {
-
-            if ($snipeResult.StatusCode -eq 200)
-            {
-                #Covert from result to JSON content
-                $snipeResult = ConvertFrom-JSON($snipeResult.Content)
-
-                if ($snipeResult.total -eq 1)
-                {
-                    if ($whileCounter -lt 1)
-                    {
-                        Write-Log "Sucessfully retrieved device information for $deviceSerial from Snipe-IT"
-                    }
-                    
-                    $snipeResult = $snipeResult.rows[0]
-                    
-                    if ($snipeResult.assigned_to.type -eq "user")
-                    {
-                        Write-Log "Device $deviceSerial is Assigned to $($snipeResult.assigned_to.name) ($($snipeResult.assigned_to.username))"
-                        $adRetrieval = $true
-                    }
-                    else 
-                    {
-                        Write-Log "Device $deviceSerial is not assigned to a User, Waiting"
-                        Start-Sleep -Seconds $retryPeriod
-                        $whileCounter++
-                    }
-                    
-                }
-                elseif ($snipeResult.total -eq 0)
-                {
-                    Write-Log "Device $deviceSerial does not exist in Snipe-IT, Waiting"
-                    Start-Sleep -Seconds $retryPeriod
-                    $whileCounter++
-                }
-                else 
-                {
-                    Write-Log "More than one device with $deviceSerial exists in Snipe-IT, Exiting"
-                    exit
-                }
-                
-            }
-            else 
-            {
-                Write-Log "Cannot retrieve user $deviceSerial from ActiveDirectory due to unknown error, exiting"
-                exit
-            }
-        }
-        catch 
-        {
-            Write-Log $_.Exception
-            exit
-        }
+        Write-Log "User is a $userTitle, Continuing"
     }
-#>
+    else #if ($null -eq $userTitle)
+    {
+        Write-Log "Unable to find a valid user or title for $($snipeResult.assigned_to.name)"
+    }
 }
 
 
