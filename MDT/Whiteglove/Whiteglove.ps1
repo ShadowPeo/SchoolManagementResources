@@ -102,6 +102,8 @@ if (-not [string]::IsNullOrWhiteSpace($TSEnv:TASKSEQUENCEID))
     $script:taskSequence = $true
 }
 
+#Check location of script is C:\ProgramData\Whiteglove as PSScriptRoot, if not then copy to that location, and restart the script with provided flags from this run
+
 #Do this segment only if the script has not set paramters up
 if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
 {
@@ -196,17 +198,24 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
     }
 
     $UserResult = $null #Blank User result
-    $userTitle = Invoke-RestMethod http://7893app02.curric.western-port-sc.wan:5000/user/get/title/$($snipeResult.assigned_to.username)
+    $userTitle = Invoke-RestMethod $psuURI/user/get/title/$($snipeResult.assigned_to.username)
     
     if ($null -ne $userTitle -and ($userTitle -eq "Student" -or $userTitle -eq "Future Student"))
     {
         Write-Log "User is a $userTitle, Continuing"
-        $workingPassword = Invoke-RestMethod http://7893app02.curric.western-port-sc.wan:5000/user/reset/stupass/$($snipeResult.assigned_to.username)
-        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod http://7893app02.curric.western-port-sc.wan:5000/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
+        $workingPassword = Invoke-RestMethod $psuURI/user/reset/stupass/$($snipeResult.assigned_to.username)
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod $psuURI/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
         Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword" -Value $workingPassword -type "String"
         Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -Value "CURRIC" -type "String"
         Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount" -Value 0 -type "String"
         Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon" -Value 1 -type "String"
+
+        #Set the script to run on login with the -StageTwo flag
+
+        if ($script:taskSequence -ne $true)
+        {
+            #Restart-Computer
+        }
     }
     else #if ($null -eq $userTitle)
     {
@@ -225,12 +234,12 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
     #^Ensure User is Student (or Future Student) DONE
     #^Reset Password to known password (Dinopass) DONE
 
-#Add Registry Keys for auto-login
-#HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon AutoAdminLogon REG_SZ 1 
-#HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon AutoLogonCount
-#HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultDomainName REG_SZ  CURRIC 
-#HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultPassword  REG_SZ  <<PASSWORD>>
-#HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultUserName  REG_SZ  <<USERNAME (SAM ACCOUNT NAME)>>
+#^Add Registry Keys for auto-login
+#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon AutoAdminLogon REG_SZ 1 
+#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon AutoLogonCount
+#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultDomainName REG_SZ  CURRIC 
+#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultPassword  REG_SZ  <<PASSWORD>>
+#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultUserName  REG_SZ  <<USERNAME (SAM ACCOUNT NAME)>>
 
 #Add Script to firstlogin/startup to continue from here
 
