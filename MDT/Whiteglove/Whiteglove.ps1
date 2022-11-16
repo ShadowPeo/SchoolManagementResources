@@ -1,7 +1,7 @@
 param 
     (
         #School Details
-        [string]$mode = "FirstRun" #Used to define where in the process the script is starting from
+        [string]$mode = "StageTwo" #Used to define where in the process the script is starting from
     )
 
 #requires -version 2
@@ -53,14 +53,13 @@ $retryPeriod = 6
 #Snipe-IT Details
 $snipeRetrivalMaxAttempts = 10 #It will attempt to retrieve the record every 60 seconds, so this is equivilent to minutes
 
-#Active Directory Details
-$adRetrivalMaxAttempts = 10 #It will attempt to retrieve the record every 60 seconds, so this is equivilent to minutes
-
 #Script Variables - Declared to stop it being generated multiple times per run
 $snipeRetrieval = $false
 $snipeResult = $null #Blank Snipe result
-$adRetrieval = $false
-$adUser = $null
+
+#Whiteglove Success Criteria
+$successAppType = "APPX"
+$successApp = "CompanyPortal"
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -197,18 +196,17 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
         }
     }
 
-    $UserResult = $null #Blank User result
     $userTitle = Invoke-RestMethod $psuURI/user/get/title/$($snipeResult.assigned_to.username)
     
     if ($null -ne $userTitle -and ($userTitle -eq "Student" -or $userTitle -eq "Future Student"))
     {
         Write-Log "User is a $userTitle, Continuing"
         $workingPassword = Invoke-RestMethod $psuURI/user/reset/stupass/$($snipeResult.assigned_to.username)
-        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod $psuURI/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
-        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword" -Value $workingPassword -type "String"
-        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -Value "CURRIC" -type "String"
-        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount" -Value 0 -type "String"
-        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon" -Value 1 -type "String"
+        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod $psuURI/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
+        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword" -Value $workingPassword -type "String"
+        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -Value "CURRIC" -type "String"
+        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount" -Value 0 -type "String"
+        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon" -Value 1 -type "String"
 
         #Set the script to run on login with the -StageTwo flag
 
@@ -224,6 +222,19 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
     }
 }
 
+$appCheck = $null
+if ($mode = "StageTwo")# -or $StageTwo)
+{
+    if ($successAppType -eq "APPX")
+    {
+        Write-Log "Running APPX Check"
+        Import-Module -Name Appx | Out-Null
+        if (((Get-AppxPackage -AllUsers | Select-Object Name, PackageFullName | Where-Object Name -match $successApp).Count) -ge 1)
+        {
+            Write-Log "Whiteglove Success, cleaning up script"
+        }
+    }
+}
 
 #^Lookup Assignment in Snipe
     #*If not assigned, do loop until X iterations (minutes) are complete or is assigned, check every Y minutes - Loop Done, Exit/Remdiation not done
