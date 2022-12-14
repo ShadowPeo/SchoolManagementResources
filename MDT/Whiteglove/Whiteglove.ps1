@@ -1,7 +1,8 @@
 param 
     (
         #School Details
-        [string]$mode = "StageTwo" #Used to define where in the process the script is starting from
+        [string]$mode = "", #Used to define where in the process the script is starting from
+        [int]$restarts = 0 #Used to define where in the process the script is starting from
     )
 
 #requires -version 2
@@ -45,6 +46,8 @@ Import-Module "$PSScriptRoot/DevEnv.ps1" -Force ##Temporary Variables used for d
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+Write-Host $MyInvocation.InvocationName.Parameters
+
 $sLogFile = Join-Path -Path $sLogPath -ChildPath $sLogName
 
 #Length of time between retries
@@ -53,6 +56,10 @@ $retryPeriod = 6
 #Snipe-IT Details
 $snipeRetrivalMaxAttempts = 10 #It will attempt to retrieve the record every 60 seconds, so this is equivilent to minutes
 
+#Confirmation Details
+$confirmationMaxAttempts = 30
+
+
 #Script Variables - Declared to stop it being generated multiple times per run
 $snipeRetrieval = $false
 $snipeResult = $null #Blank Snipe result
@@ -60,6 +67,7 @@ $snipeResult = $null #Blank Snipe result
 #Whiteglove Success Criteria
 $successAppType = "APPX"
 $successApp = "CompanyPortal"
+$successFile = $null
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -94,6 +102,21 @@ function Set-RegistryKey
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 #Log-Start -LogPath $sLogPath -LogName $sLogName -ScriptVersion $sScriptVersion
+
+#Ensure script is running from C:\Scripts
+
+if($PSScriptRoot -ne "C:\Scripts\WhiteGlove")
+{
+    if (!(Test-Path -Path "C:\Scripts" -PathType Container))
+    {
+        New-Item -Path "C:\Scripts\" -ItemType Directory
+    }
+
+    Copy-Item -Path $PSScriptRoot -Destination 'C:\Scripts' -Recurse -Force
+
+    #T#Start-Process "powershell.exe" -ArgumentList "-NoExit -ExecutionPolicy Bypass -File C:\Scripts\WhiteGlove\$($MyInvocation.MyCommand.Name) -Mode $mode" -PassThru
+    #T#exit
+}
 
 #Check to see if this is a MDT Run
 if (-not [string]::IsNullOrWhiteSpace($TSEnv:TASKSEQUENCEID))
@@ -201,39 +224,127 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
     if ($null -ne $userTitle -and ($userTitle -eq "Student" -or $userTitle -eq "Future Student"))
     {
         Write-Log "User is a $userTitle, Continuing"
-        $workingPassword = Invoke-RestMethod $psuURI/user/reset/stupass/$($snipeResult.assigned_to.username)
-        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod $psuURI/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
-        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword" -Value $workingPassword -type "String"
-        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -Value "CURRIC" -type "String"
-        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount" -Value 0 -type "String"
-        #Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon" -Value 1 -type "String"
+        #T#$workingPassword = Invoke-RestMethod $psuURI/user/reset/stupass/$($snipeResult.assigned_to.username)
+        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod $psuURI/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
+        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword" -Value $workingPassword -type "String"
+        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -Value "CURRIC" -type "String"
+        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount" -Value 0 -type "String"
+        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon" -Value 1 -type "String"
 
         #Set the script to run on login with the -StageTwo flag
+        $taskAction = New-ScheduledTaskAction `
+            -Execute 'powershell.exe' `
+            -Argument '-ExecutionPolicy Bypass -File C:\Scripts\WhiteGlove\Whiteglove.ps1 -mode=StageTwo' `
+            -WorkingDirectory 'C:\Scripts'
 
+
+        $taskTrigger = New-ScheduledTaskTrigger -AtLogOn -User "CURRIC\($snipeResult.assigned_to.username)).samaccountname)"
+
+        # Register the scheduled task
+        Register-ScheduledTask `
+            -TaskName 'WhiteGlove' `
+            -Action $taskAction `
+            -Trigger $taskTrigger
+
+        
         if ($script:taskSequence -ne $true)
         {
-            #Restart-Computer
+            #T#Restart-Computer
         }
+
     }
     else #if ($null -eq $userTitle)
     {
         Write-Log "Unable to find a valid user or title for $($snipeResult.assigned_to.name)"
-        ##TODO Wait for Title
+        #TODO Wait for Title
     }
 }
 
-$appCheck = $null
+$appCheckSuccess = $null
 if ($mode = "StageTwo")# -or $StageTwo)
 {
-    if ($successAppType -eq "APPX")
+    
+    #T#Remove-Item "$PSScriptRoot\Config.ps1" -Force
+    
+    
+    #Check if the logged in user matches the assigned user
+    
+    $checkTimes = 0
+    while($appCheckSuccess -ne $true)
     {
-        Write-Log "Running APPX Check"
-        Import-Module -Name Appx | Out-Null
-        if (((Get-AppxPackage -AllUsers | Select-Object Name, PackageFullName | Where-Object Name -match $successApp).Count) -ge 1)
+        if ($successAppType -eq "APPX" -and $null -ne $successApp)
         {
-            Write-Log "Whiteglove Success, cleaning up script"
+            Write-Log "Running APPX Check"
+            Import-Module -Name Appx | Out-Null
+            if ($null -ne (Get-AppxPackage -AllUsers | Select-Object Name, PackageFullName | Where-Object Name -match $successApp))
+            {
+                $appCheckSuccess = $true
+                Write-Log "Whiteglove Success, cleaning up script"
+            }
         }
+        elseif ($successAppType -eq "APPX" -and $null -eq $successApp)
+        {
+            Write-Log "Success Type is set to file, but there is no file set, Pausng"
+            Write-Host "Success Type is set to file, but there is no file set, Pausng"
+            Pause
+        }
+
+        if ($successAppType -eq "FILE" -and $null -ne $successFile)
+        {
+            Write-Log "Running File Check"
+            if (Test-Path -Path $successFile)
+            {
+                $appCheckSuccess = $true
+                Write-Log "Whiteglove Success, cleaning up script"
+            }
+        }
+        elseif ($successAppType -eq "FILE" -and $null -eq $successFile)
+        {
+            Write-Log "Success Type is set to file, but there is no file set, Pausng"
+            Write-Host "Success Type is set to file, but there is no file set, Pausng"
+            Pause
+        }
+        $appCheckSuccess = $false
+
+        if($appCheckSuccess)
+        {
+
+            #Remote Scheduled Task
+            Write-Log "Unregister Scheduled Task"
+            Unregister-ScheduledTask -TaskName "WhiteGlove" -Confirm:$false
+
+            #Remove Registry Keys
+            Write-Log "Removing Registry Keys"
+            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName"
+            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword"
+            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName"
+            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount"
+            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon"
+
+            #Remove All Scripts from the directory
+            WRite-Log "Self Destructing Script"
+            #t#Remove-Item -Path $PSScriptRoot -Recurse -Force
+
+            #Shutdown PC
+            Write-Log "Shutting Down PC"
+            #T#Stop-Computer -Confirm:$false
+
+        }
+        else
+        {
+            Write-Log "App not located waiting $retryPeriod seconds"
+            Start-Sleep -Second $retryPeriod
+            
+            $checkTimes++
+            
+            if ($checkTimes -gt $confirmationMaxAttempts)
+            {
+                Restart-Computer -Confirm:$false
+            }
+        }
+
     }
+    
 }
 
 #^Lookup Assignment in Snipe
@@ -245,17 +356,12 @@ if ($mode = "StageTwo")# -or $StageTwo)
     #^Ensure User is Student (or Future Student) DONE
     #^Reset Password to known password (Dinopass) DONE
 
-#^Add Registry Keys for auto-login
-#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon AutoAdminLogon REG_SZ 1 
-#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon AutoLogonCount
-#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultDomainName REG_SZ  CURRIC 
-#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultPassword  REG_SZ  <<PASSWORD>>
-#^HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon - DefaultUserName  REG_SZ  <<USERNAME (SAM ACCOUNT NAME)>>
-
 #Add Script to firstlogin/startup to continue from here
 
 #Loop   
-    #Check for something that can determain if Intune login completed
-    #If Exists, remove registry keys, scheduled task and shutdown exiting loop
-        #Else Sleep X, and wait for loop to run again
-            #If Loop as run for more than X minutes then restart
+    #Check for something that can determain if Intune login completed - APPX Done, Executible and file not done
+    #^If Exists, remove registry keys, scheduled task and shutdown exiting loop
+        #^Else Sleep X, and wait for loop to run again
+            #^If Loop as run for more than X minutes then restart
+
+            
