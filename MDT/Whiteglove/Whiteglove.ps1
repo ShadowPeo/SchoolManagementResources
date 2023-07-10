@@ -1,7 +1,7 @@
 param 
     (
         #School Details
-        [string]$mode = "", #Used to define where in the process the script is starting from
+        [string]$mode = "FirstRun", #Used to define where in the process the script is starting from
         [int]$restarts = 0 #Used to define where in the process the script is starting from
     )
 
@@ -42,7 +42,7 @@ $ErrorActionPreference = "SilentlyContinue"
 
 #Modules
 Import-Module "$PSScriptRoot/Config.ps1" -Force #Contains protected data (API Keys, URLs etc)
-Import-Module "$PSScriptRoot/DevEnv.ps1" -Force ##Temporary Variables used for development and troubleshooting
+#Import-Module "$PSScriptRoot/DevEnv.ps1" -Force ##Temporary Variables used for development and troubleshooting
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -51,7 +51,7 @@ Write-Host $MyInvocation.InvocationName.Parameters
 $sLogFile = Join-Path -Path $sLogPath -ChildPath $sLogName
 
 #Length of time between retries
-$retryPeriod = 6
+$retryPeriod = 60
 
 #Snipe-IT Details
 $snipeRetrivalMaxAttempts = 10 #It will attempt to retrieve the record every 60 seconds, so this is equivilent to minutes
@@ -130,7 +130,7 @@ if (-not [string]::IsNullOrWhiteSpace($TSEnv:TASKSEQUENCEID))
 if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
 {
     #Get Serial Number from BIOS
-    #T#$deviceSerial = (Get-CIMInstance Win32_BIOS).SerialNumber
+    $deviceSerial = (Get-CIMInstance Win32_BIOS).SerialNumber
 
     $checkURL=$snipeURL.Substring((Select-String 'http[s]:\/\/' -Input $snipeURL).Matches[0].Length)
 
@@ -224,12 +224,12 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
     if ($null -ne $userTitle -and ($userTitle -eq "Student" -or $userTitle -eq "Future Student"))
     {
         Write-Log "User is a $userTitle, Continuing"
-        #T#$workingPassword = Invoke-RestMethod $psuURI/user/reset/stupass/$($snipeResult.assigned_to.username)
-        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod $psuURI/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
-        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword" -Value $workingPassword -type "String"
-        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -Value "CURRIC" -type "String"
-        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount" -Value 0 -type "String"
-        #T#Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon" -Value 1 -type "String"
+        $workingPassword = Invoke-RestMethod $psuURI/user/reset/stupass/$($snipeResult.assigned_to.username)
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName" -Value ((Invoke-RestMethod $psuURI/user/get/username/$($snipeResult.assigned_to.username)).samaccountname) -type "String"
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword" -Value $workingPassword -type "String"
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -Value "CURRIC" -type "String"
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount" -Value 0 -type "String"
+        Set-RegistryKey -registryPath "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon" -Value 1 -type "String"
 
         #Set the script to run on login with the -StageTwo flag
         $taskAction = New-ScheduledTaskAction `
@@ -238,7 +238,7 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
             -WorkingDirectory 'C:\Scripts'
 
 
-        $taskTrigger = New-ScheduledTaskTrigger -AtLogOn -User "CURRIC\($snipeResult.assigned_to.username)).samaccountname)"
+        $taskTrigger = New-ScheduledTaskTrigger -AtLogOn -User "CURRIC\$(($snipeResult.assigned_to.username).SubString(0,7))"
 
         # Register the scheduled task
         Register-ScheduledTask `
@@ -249,7 +249,11 @@ if ($mode -eq "FirstRun" -or $mode -eq "SubRun")
         
         if ($script:taskSequence -ne $true)
         {
-            #T#Restart-Computer
+            Restart-Computer
+        }
+        else 
+        {
+            exit
         }
 
     }
@@ -300,8 +304,8 @@ if ($mode = "StageTwo")# -or $StageTwo)
         }
         elseif ($successAppType -eq "FILE" -and $null -eq $successFile)
         {
-            Write-Log "Success Type is set to file, but there is no file set, Pausng"
-            Write-Host "Success Type is set to file, but there is no file set, Pausng"
+            Write-Log "Success Type is set to file, but there is no file set, Pausing"
+            Write-Host "Success Type is set to file, but there is no file set, Pausing"
             Pause
         }
         $appCheckSuccess = $false
@@ -315,11 +319,11 @@ if ($mode = "StageTwo")# -or $StageTwo)
 
             #Remove Registry Keys
             Write-Log "Removing Registry Keys"
-            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName"
-            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword"
-            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName"
-            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount"
-            #T#Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon"
+            Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultUserName"
+            Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultPassword"
+            Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName"
+            Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoLogonCount"
+            Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AutoAdminLogon"
 
             #Remove All Scripts from the directory
             WRite-Log "Self Destructing Script"
