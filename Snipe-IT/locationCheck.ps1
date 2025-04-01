@@ -1,5 +1,4 @@
 
-
 <#
 .SYNOPSIS
   Reads input from console for serial number, and if the serial number is found marks the device is audited in Snipe-IT
@@ -34,7 +33,6 @@ Sends Status to SNIPE
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 #Script Variables - Declared to stop it being generated multiple times per run
 $currentLocation = $null
@@ -57,10 +55,12 @@ $requiredModules = @(
 
 #-----------------------------------------------------------[Modules]------------------------------------------------------------
 
-Import-Module "$PSScriptRoot/Config.ps1" -Force #Contains protected data (API Keys, URLs etc)
-Import-Module "$PSScriptRoot/DiscoICT.ps1" -Force
+Import-Module "$PSScriptRoot\Config.ps1" -Force #Contains protected data (API Keys, URLs etc)
+Import-Module "$PSScriptRoot\DiscoICT.ps1" -Force
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+Write-Host "$PSScriptRoot\Config.ps1"
 
 function Write-Log 
 {
@@ -80,6 +80,14 @@ function Write-Log
     
 }
 
+function Exit-Program
+{
+    if ($csvOutput.Count -ge 1)
+    {
+        $csvOutput | Export-Csv -Path $csvFile -Encoding ascii -Append
+    }
+    exit
+}
 function Add-Module ($m) {
 
     # If module is imported say that and do nothing
@@ -309,7 +317,8 @@ function Get-snipeUser
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 $checkURL=$snipeURL.Substring((Select-String 'http[s]:\/\/' -Input $snipeURL).Matches[0].Length)
-
+$csvOutput = @()
+$csvFile = "$PSScriptRoot/audit-output.csv"
 foreach ($module in $requiredModules)
 {
     Add-Module -m $module.module
@@ -326,7 +335,7 @@ foreach ($module in $requiredModules)
 if ($checkURL.IndexOf('/') -eq -1)
 {
     #Test ICMP connection
-    if ((Test-Connection -TargetName $checkURL))
+    if ((Test-Connection $checkURL))
     {
         Write-Log "Successfully to Snipe-IT server at address $checkURL" -ForegroundColor Green
         Connect-SnipeitPS -url $snipeURL -apiKey $snipeAPIKey
@@ -334,14 +343,14 @@ if ($checkURL.IndexOf('/') -eq -1)
     else 
     {
         Write-Log "Cannot connect to Snipe-IT server at address $checkURL exiting" -ForegroundColor Red
-        exit
+        Exit-Program
     }
 }
 
 if (-not (Test-Path $fileLocationMap))
 {
     Write-Log "Location Mapping file does not exist, please create it" -ForegroundColor Red
-    exit
+    Exit-Program
 }
 else 
 {
@@ -375,7 +384,7 @@ while ([string]::IsNullOrWhiteSpace($currentLocation))
     elseif ($readData -ieq "Exit")
     {
         Write-Log "Exit Requested, exiting" -ForegroundColor Green
-        exit
+        Exit-Program
     }
     elseif ($readData -ieq "Checkin")
     {
@@ -414,7 +423,7 @@ while (-not $exitRun)
     elseif ($readData -ieq "Exit")
     {
         Write-Log "Exit Requested, exiting" -ForegroundColor Green
-        exit
+        Exit-Program
     }
     elseif ($readData -ieq "Checkin")
     {
@@ -570,6 +579,16 @@ while (-not $exitRun)
                 $snipeLocationResult = Set-SnipeitAsset -id $snipeID -customfields @{ 'location_id' = $($currentLocation.snipeid) }  ##Set Location to blank (or deployed if cannot set blank)
                 $snipeStatusResult = Set-SnipeitAsset -id $snipeID -status_id $snipeStorageLabelID   ##Set this as to in storage or deployed
                 Set-discoLocation -deviceID $serialNumber -deviceLocation $currentLocation.name -discoURL $discoURL
+                $tempData = $null
+                $tempData = [PSCustomObject]@{
+                    Date = Get-Date -format 'yyyy-MM-dd' 
+                    Time = Get-Date -format 'HH:mm:ss'
+                    Asset = $snipeAsset
+                    Serial = $serialNumber
+                    Location = $currentLocation.name
+                }
+                $csvOutput += $tempData
+    
             }
 
             if ($auditOnSet)

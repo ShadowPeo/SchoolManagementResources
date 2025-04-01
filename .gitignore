@@ -2,3 +2,18 @@ Snipe-IT/Config.ps1
 Snipe-IT/locations.csv
 JAMF/Working/PreviousRequired.csv
 JAMF/Config/Config.ps1
+Testing/**
+**/config.ps1
+**/config.json
+
+
+# Ignore all .log files
+*.log
+# Ignore all .tmp files
+*.tmp
+# Ignore all .bak files
+*.bak
+# MacOS specific files
+.DS_Store
+# Windows specific files
+Thumbs.db
