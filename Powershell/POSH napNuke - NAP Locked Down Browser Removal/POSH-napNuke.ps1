@@ -204,6 +204,38 @@ foreach ($userDir in (Get-ChildItem -Path "C:\Users" -Directory))
     }
 }
 
+#Fix Workstation Lock Disablement
+# Loop through each profile
+foreach ($profile in (Get-ChildItem -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList")) {
+    # Get the ProfileImagePath
+    $imagePath = Get-ItemProperty -Path $profile.PSPath -Name "ProfileImagePath" -ErrorAction SilentlyContinue
+    if ($imagePath -ne $null) {
+        # Extract the username (last segment of the path)
+        $username = $imagePath.ProfileImagePath.Split('\')[-1]
+        # Check if username matches the pattern (1 character or hyphen + 4 digits)
+        if ($username -match "^[a-zA-Z]{2}([a-zA-Z]|-)\d{4}$") {
+            $sid = $profile.PSChildName
+            Write-Host "Found matching profile: $username (SID: $sid)"
+            $RegistryPath = "Registry::HKEY_USERS\$sid\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+ 
+            # Check if the registry key exists
+            if (Test-Path $RegistryPath) {
+                # Check if the value exists before trying to remove it
+                $ValueExists = Get-ItemProperty -Path $RegistryPath -Name "DisableLockWorkstation" -ErrorAction SilentlyContinue
+               
+                if ($ValueExists -ne $null) {
+                    # Remove the registry value
+                    Remove-ItemProperty -Path $RegistryPath -Name "DisableLockWorkstation" -Force
+                    Write-Host "Successfully removed DisableLockWorkstation registry value for user $username."
+                } else {
+                    Write-Host "The DisableLockWorkstation value does not exist in the registry for user $username."
+                }
+            } else {
+                Write-Host "The registry key does not exist: $RegistryPath"
+            }
+        }
+    }
+}
 
 #Remove various files and folders
 Remove-Item -Path "$(${env:ProgramFiles(x86)})\NAP Locked down browser" -Recurse -Force -ErrorAction SilentlyContinue
