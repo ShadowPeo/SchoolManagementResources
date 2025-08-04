@@ -4,9 +4,9 @@ Import-Module "$PSScriptRoot/Config/config.ps1"
 
 $token = Get-jamfToken -tennantURL $tennantURL #-user $jamfUser -pass $jamfPass
 
-$iPadsTemp = (Get-jamfMobileDevices -tennantURL $tennantURL -token $token).results | Where-Object -FilterScript {($_.model -like "iPad*") -and -not [string]::IsNullOrWhiteSpace($_.username) -and -not [string]::IsNullOrWhiteSpace($_.name)} | Sort-Object username
+$iPadsTemp = (Get-jamfMobileDevices).results | Where-Object -FilterScript {($_.model -like "iPad*") -and -not [string]::IsNullOrWhiteSpace($_.username) -and -not [string]::IsNullOrWhiteSpace($_.name)} | Sort-Object username
 $iPadsBYOD = $iPadsTemp | Where-Object name -like "iPadB*" | Sort-Object username | Select-Object username
-$iPadsAllocated = $iPadsTemp | Where-Object username -like "class.*@DOMAIN" | Sort-Object username | Select-Object name, username
+$iPadsAllocated = $iPadsTemp | Where-Object username -like "class.*@$upnDomain" | Sort-Object username | Select-Object name, username
 $students = Import-CSV -Path $studentCSV | Select-Object *, @{n='INT_YEAR';e={[int]$_.School_Year}},@{label="Homegroup";expression={$($_."HOME_GROUP")}} | Where-Object {($_.INT_YEAR -gt 0) -and ($_.INT_YEAR -le 5)}
 
 $studentsNoiPad = @()
