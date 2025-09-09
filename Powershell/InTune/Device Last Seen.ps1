@@ -10,14 +10,7 @@ Connect-MgGraph -Scopes @(
 
 # Function to get device information from both sources
 function Get-DeviceLastSeenDates {
-    param(
-        [Parameter(Mandatory = $false)]
-        [int]$DaysBack = 30
-    )
-
-    # Get date for filtering
-    $filterDate = (Get-Date).AddDays(-$DaysBack)
-
+    
     # Get Entra ID devices
     $entraDevices = Get-MgDevice -All | Select-Object DisplayName, 
         @{Name='EntraLastSeenDate';Expression={$_.ApproximateLastSignInDateTime}},
