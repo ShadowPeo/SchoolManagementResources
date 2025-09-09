@@ -5,6 +5,8 @@ JAMF/Config/Config.ps1
 Testing/**
 **/config.ps1
 **/config.json
+Powershell/Database Intergration/Data
+Powershell/Database Intergration/Config.psd1
 
 
 # Ignore all .log files
