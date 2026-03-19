@@ -1,0 +1,22 @@
+$webRequest = Invoke-WebRequest -Uri "https://userlockoutstatus.eduweb.vic.gov.au/Default.aspx?AccountName=st00605" -Credential $cred
+
+# Parse HTML content using regex patterns
+$returnedUserID = if ($webRequest.Content -match 'UserIDLabel">([^<]+)') {
+    $matches[1].Trim()
+} else { "Not Found" }
+
+$returnedAccountStatus = if ($webRequest.Content -match 'StatusLabel">([^<]+)') {
+    $matches[1].Trim()
+} else { "Not Found" }
+
+$returnedLastPWDReset = if ($webRequest.Content -match 'LastPWDTimeLabel">([^<]+)') {
+    $matches[1].Trim()
+} else { "Not Found" }
+
+$returnResult = [PSCustomObject]@{
+    userID = $returnedUserID
+    accountStatus = $returnedAccountStatus
+    lastPWDReset = $returnedLastPWDReset
+}
+
+return $returnResult | ConvertTo-Json

@@ -1,0 +1,21 @@
+    $subTypes = @("HMisc_Bag", "HNWar_PowerAdapter", "HNWar_PowerCord")
+
+    $body = @{
+        DeviceSerialNumber = $tempSnipeAsset.serial
+        UserId = "CURRIC\CLA0025"
+        SourceUrl = "http://disco:9292/Device/Show/$($tempSnipeAsset.serial)"
+        Type = "HNWar"
+        DeviceHeld = "False"
+        _DeviceHeld = "false"
+        Comments = "Bag and Charger not present in audit, and not brought in since`r`n"
+    }
+    
+    # Manually construct the JSON string
+    $jsonBody = "{"
+    foreach ($key in $body.Keys) {
+        $jsonBody += "`"$key`":`"$($body[$key])`","
+    }
+    foreach ($subType in $subTypes) {
+        $jsonBody += "`"SubTypes`":`"$subType`","
+    }
+    $jsonBody = $jsonBody.TrimEnd(',') + "}"
