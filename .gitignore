@@ -16,4 +16,4 @@ Testing/**
 # MacOS specific files
 .DS_Store
 # Windows specific files
-Thumbs.db
+Thumbs.db.claude/
