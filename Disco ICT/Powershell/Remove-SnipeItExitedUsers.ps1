@@ -2,11 +2,12 @@
 
 <#
     Deletes Snipe-IT users who are no longer current, matched to AD by username (UPN).
-    Still enabled in AD - left alone.
-    No longer exists in AD, or exists but AD's CASES status attribute marks them as left -
-    deleted from Snipe-IT (gated by $DryRun).
-    Exists in AD but disabled without a "left" CASES status - left alone, but flagged to
-    Information for manual review since it doesn't cleanly fit either bucket.
+    AD's Enabled flag is not used as a signal - a disabled account can just as easily mean
+    new/not-yet-provisioned, temporarily locked, or suspended, none of which mean "left".
+    The only signals that mean exited are: the account no longer exists in AD at all, AD's
+    CASES status attribute marks them as left, or the account sits in a compliance-retained
+    OU (kept enabled deliberately, treated as exited regardless). Any of those - deleted from
+    Snipe-IT (gated by $DryRun). Anything else - left alone.
     Usernames in $ExcludedSnipeUsernames (e.g. service accounts) are always skipped.
 
     Designed to run as a PowerShell Universal script - all inputs are variables at the top so
@@ -46,7 +47,7 @@ if (-not $ADUseCurrentCredential) {
 $adUserParams = @{
     Filter      = '*'
     Server      = $ADServer
-    Properties  = 'UserPrincipalName', 'Enabled', $ADCasesStatusAttribute
+    Properties  = 'UserPrincipalName', $ADCasesStatusAttribute
 }
 if ($adCredential) {
     $adUserParams['Credential'] = $adCredential
@@ -69,7 +70,6 @@ foreach ($user in $adUsers) {
         }
 
         $adUsersByUpn[$user.UserPrincipalName] = [PSCustomObject]@{
-            Enabled        = $user.Enabled
             CasesStatus    = $user.$ADCasesStatusAttribute
             InComplianceOU = $inComplianceOU
         }
@@ -135,11 +135,6 @@ foreach ($snipeUser in $snipeUsers) {
 
     $adUser = $adUsersByUpn[$username]
 
-    if ($adUser -and $adUser.Enabled -and -not $adUser.InComplianceOU) {
-        Write-Verbose "Still enabled in AD, leaving alone: $username"
-        continue
-    }
-
     $reason = $null
     if (-not $adUser) {
         $reason = 'no longer exists in AD'
@@ -152,7 +147,7 @@ foreach ($snipeUser in $snipeUsers) {
     }
 
     if (-not $reason) {
-        Write-Information "Snipe-IT user '$username' exists in AD but is disabled without a '$ADCasesStatusLeftValue' CASES status - review manually"
+        Write-Verbose "Still current per AD/CASES, leaving alone: $username"
         continue
     }
 

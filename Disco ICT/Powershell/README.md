@@ -119,18 +119,18 @@ One-off (but safely re-runnable) Snipe-IT-only cleanup, no Disco/AD involved: fi
 
 # Remove-SnipeItExitedUsers.ps1
 
-Deletes Snipe-IT users who are no longer current, matched to AD by username (UPN):
+Deletes Snipe-IT users who are no longer current, matched to AD by username (UPN). AD's `Enabled` flag is deliberately **not** used as a signal here - a disabled account can just as easily mean new/not-yet-provisioned, temporarily locked, or suspended, none of which mean the person has left. The only signals treated as "exited":
 
-- Still enabled in AD (and not in a compliance-retained OU, see below) - left alone.
-- No longer exists in AD, or exists but AD's CASES status attribute marks them as left - checks in and sets `SnipeItUnassignedStatusId` on any assets still assigned to them, then deletes the Snipe-IT user (all gated by `$DryRun`).
-- Exists in AD but disabled without a "left" CASES status - left alone, but flagged to `Write-Information` for manual review since it doesn't cleanly fit either bucket.
-- Some staff accounts are deliberately kept **enabled** in AD for records-keeping/compliance reasons even though the person has left - `$ADComplianceRetainedOUs` lists the OU(s) this applies to; accounts under them are treated as exited regardless of their `Enabled` value.
-- Usernames in `$ExcludedSnipeUsernames` (service/admin accounts) are always skipped first, before any AD lookup.
+- The account no longer exists in AD at all, or
+- It exists but AD's CASES status attribute marks them as left, or
+- It sits in a compliance-retained OU (`$ADComplianceRetainedOUs` - some staff accounts are deliberately kept enabled for records-keeping reasons even after leaving; accounts under these OUs are treated as exited regardless of any other state).
+
+Any of those - checks in and sets `SnipeItUnassignedStatusId` on any assets still assigned to them, then deletes the Snipe-IT user (all gated by `$DryRun`). Anything else - left alone. Usernames in `$ExcludedSnipeUsernames` (service/admin accounts) are always skipped first, before any AD lookup.
 
 ## Requirements
 
 - `ActiveDirectory` PowerShell module.
-- An AD account with permission to read user objects (`UserPrincipalName`, `Enabled`, and the CASES status attribute).
+- An AD account with permission to read user objects (`UserPrincipalName` and the CASES status attribute).
 - A Snipe-IT API token with permission to read/checkin/update hardware assets, **and `users.delete`** on its own Snipe-IT account. This is a separate permission from asset checkin/status-update rights - without it, checkin and status-update calls succeed but the delete call fails with a generic `"This action is unauthorized."`, even after every asset has been successfully checked in. Confirmed against `UsersController::destroy()` in the Snipe-IT source, which requires the `users` permission column on the caller's role.
 
 ## Setup
@@ -141,9 +141,9 @@ Deletes Snipe-IT users who are no longer current, matched to AD by username (UPN
 | `SnipeItUnassignedStatusId` | The `status_id` to set on assets checked in from a deleted user. |
 | `SnipeItRequestDelayMs`, `SnipeItMaxRetries` | Throttling for the Snipe-IT API. |
 | `ADServer`, `ADUsername`, `ADPassword` | AD connection. Set `ADUseCurrentCredential = $true` to use the current identity instead. |
-| `ADCasesStatusAttribute` | The AD attribute holding CASES status - **TBC, confirm the real attribute name** (`userCASESStatus` is a placeholder guess). |
-| `ADCasesStatusLeftValue` | The value of that attribute meaning "exited" - **TBC, confirm the real value**. |
-| `ADComplianceRetainedOUs` | Array of OU distinguished names kept enabled for records-keeping only. Blank/empty = no override. |
+| `ADCasesStatusAttribute` | The AD attribute holding CASES status - `userCASESStatus` confirmed correct against live WPSC data. |
+| `ADCasesStatusLeftValue` | The value of that attribute meaning "exited" - `Left` confirmed correct against live WPSC data. |
+| `ADComplianceRetainedOUs` | Array of OU distinguished names kept enabled for records-keeping only. Defaults to empty - not needed yet, just a hook for if/when this comes into play. |
 | `ADUsersSearchBase` | Optional OU distinguished name to restrict the AD user pull (should cover `ADComplianceRetainedOUs` too, since AD search is subtree from this base). Blank searches the whole domain. |
 | `ExcludedSnipeUsernames` | Array of Snipe-IT usernames to always skip, e.g. service/admin accounts. |
 | `DryRun` | Defaults to `$true`. Set to `$false` once you've validated the output. |
@@ -151,6 +151,6 @@ Deletes Snipe-IT users who are no longer current, matched to AD by username (UPN
 ## Output
 
 - `Write-Output`: an action taken (or a dry-run preview of one).
-- `Write-Verbose`: routine no-op skips (excluded username, still enabled in AD). Pass `-Verbose` to see these.
-- `Write-Information`: accounts needing manual review (disabled but not marked left; no username to match against AD).
+- `Write-Verbose`: routine no-op skips (excluded username, still current per AD/CASES).
+- `Write-Information`: accounts that can't be matched at all (no username on the Snipe-IT record to match against AD).
 - `Write-Error`: genuine failures (Snipe-IT API call failed).
