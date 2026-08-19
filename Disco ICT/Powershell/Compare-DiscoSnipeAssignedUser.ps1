@@ -1,14 +1,22 @@
 #Requires -Modules ActiveDirectory, SqlServer
 
 <#
+    Read-only companion to Set-DiscoSnipeAssignments.ps1 - intended to run about once a day and
+    report on the current state, rather than every ~30 minutes like the change script. Makes no
+    writes to Disco, Snipe-IT, or AD.
+
     Compares the assigned user on each device between Disco and Snipe-IT, matched by serial number.
     Disco stores sAMAccountName, Snipe-IT stores UPN, so the full AD user list is pulled once to
-    translate between the two. Matches go to the Verbose stream, mismatches/unresolvable records
-    go to the Information stream.
+    translate between the two.
 
-    Also sweeps every Snipe-IT asset with status "Deployed": if it has no assigned user, its status
-    is reverted (gated by $DryRun); if it's assigned but has no active Disco assignment record, that
-    gap is logged. No writes to Disco or AD in either case.
+    - Matches (direct, or via a legacy AD proxyAddress covering a preferred-name change) go to the
+      Verbose stream.
+    - Mismatches go to the Information stream with a recommendation for which system to update,
+      based on whichever side has the more recent assignment date.
+    - Also flags every Snipe-IT asset sitting at "Deployed" but checked out to a non-user (room/
+      other asset) as skipped, and silently ignores Deployed assets assigned to a user with no
+      active Disco assignment record (Disco isn't the source of truth for every asset Snipe-IT
+      tracks).
 
     Designed to run as a PowerShell Universal script - all inputs are variables at the top so
     they can be bound to PSU variables/secrets. If run outside PSU, replace the <<PLACEHOLDER>>
@@ -29,31 +37,27 @@ $ADUsername            = '<<AD_USERNAME>>'
 $ADPassword            = '<<AD_PASSWORD>>'
 $ADUserSearchBase      = ''                    # optional - restrict the AD user pull to an OU, blank = whole domain
 
-$SnipeItBaseUrl           = '<<SNIPE_IT_BASE_URL>>'
-$SnipeItApiToken          = '<<SNIPE_IT_API_TOKEN>>'
-$SnipeItRequestDelayMs    = 500          # pause between Snipe-IT API calls to stay under its rate limit
-$SnipeItMaxRetries        = 5            # retries on HTTP 429 before giving up on that page
-$SnipeItDeployedStatusId  = 4            # status_id considered "Deployed" in Snipe-IT
-$SnipeItAvailableStatusId = 2            # status_id to revert a Deployed-but-unassigned asset to
-
-$DryRun = $true                # $true = report only, no Snipe-IT status changes. Set $false to actually action.
+$SnipeItBaseUrl          = '<<SNIPE_IT_BASE_URL>>'
+$SnipeItApiToken         = '<<SNIPE_IT_API_TOKEN>>'
+$SnipeItRequestDelayMs   = 500          # pause between Snipe-IT API calls to stay under its rate limit
+$SnipeItMaxRetries       = 5            # retries on HTTP 429 before giving up on that page
+$SnipeItDeployedStatusId = 4            # status_id considered "Deployed" in Snipe-IT
 
 # ----------------------------------------------------------------------
 
 $sqlQuery = 'SELECT [DeviceSerialNumber], [AssignedUserId], [AssignedDate] FROM [Disco].[dbo].[DeviceUserAssignments] WHERE [UnassignedDate] IS NULL'
 
-$sqlParams = @{
+$sqlConnectionParams = @{
     ServerInstance          = $SqlServerInstance
     Database                = $SqlDatabase
-    Query                   = $sqlQuery
     TrustServerCertificate  = $true
 }
 if (-not $SqlUseIntegratedAuth) {
-    $sqlParams['Username'] = $SqlUsername
-    $sqlParams['Password'] = $SqlPassword
+    $sqlConnectionParams['Username'] = $SqlUsername
+    $sqlConnectionParams['Password'] = $SqlPassword
 }
 
-$discoDevices = Invoke-Sqlcmd @sqlParams
+$discoDevices = Invoke-Sqlcmd @sqlConnectionParams -Query $sqlQuery
 
 $discoDevicesBySerial = @{}
 foreach ($device in $discoDevices) {
@@ -108,18 +112,12 @@ $snipeHeaders = @{
 function Invoke-SnipeItRequest {
     param(
         [string]$Uri,
-        [string]$Method = 'Get',
-        [string]$Body = $null
+        [string]$Method = 'Get'
     )
 
     for ($attempt = 1; $attempt -le $SnipeItMaxRetries; $attempt++) {
         try {
-            $requestParams = @{ Uri = $Uri; Headers = $snipeHeaders; Method = $Method }
-            if ($Body) {
-                $requestParams['Body'] = $Body
-                $requestParams['ContentType'] = 'application/json'
-            }
-            $result = Invoke-RestMethod @requestParams
+            $result = Invoke-RestMethod -Uri $Uri -Headers $snipeHeaders -Method $Method
             Start-Sleep -Milliseconds $SnipeItRequestDelayMs
             return $result
         }
@@ -135,15 +133,6 @@ function Invoke-SnipeItRequest {
         }
     }
 }
-
-$snipeAssets = @()
-$offset = 0
-$limit  = 500
-do {
-    $response = Invoke-SnipeItRequest -Uri "$SnipeItBaseUrl/api/v1/hardware?limit=$limit&offset=$offset" -Method Get
-    $snipeAssets += $response.rows
-    $offset += $limit
-} while ($offset -lt $response.total)
 
 function ConvertTo-SnipeItDateTime {
     param($Value)
@@ -162,6 +151,15 @@ function ConvertTo-SnipeItDateTime {
     }
     return $null
 }
+
+$snipeAssets = @()
+$offset = 0
+$limit  = 500
+do {
+    $response = Invoke-SnipeItRequest -Uri "$SnipeItBaseUrl/api/v1/hardware?limit=$limit&offset=$offset" -Method Get
+    $snipeAssets += $response.rows
+    $offset += $limit
+} while ($offset -lt $response.total)
 
 $snipeAssetsBySerial = @{}
 $duplicateSnipeSerials = @{}
@@ -249,24 +247,7 @@ foreach ($device in $discoDevices) {
 }
 
 foreach ($asset in $snipeAssets) {
-    if (-not $asset.status -or $asset.status.id -ne $SnipeItDeployedStatusId) {
-        continue
-    }
-
-    if (-not $asset.assigned_to) {
-        if ($DryRun) {
-            Write-Output "DryRun - would revert status to $SnipeItAvailableStatusId for Deployed-but-unassigned Snipe-IT asset: $($asset.serial) (asset id $($asset.id))"
-            continue
-        }
-
-        try {
-            $statusBody = @{ status_id = $SnipeItAvailableStatusId } | ConvertTo-Json
-            Invoke-SnipeItRequest -Uri "$SnipeItBaseUrl/api/v1/hardware/$($asset.id)" -Method Patch -Body $statusBody | Out-Null
-            Write-Output "Reverted status to $SnipeItAvailableStatusId for Deployed-but-unassigned Snipe-IT asset: $($asset.serial) (asset id $($asset.id))"
-        }
-        catch {
-            Write-Error "Failed to revert status for Snipe-IT asset $($asset.serial) : $_"
-        }
+    if (-not $asset.status -or $asset.status.id -ne $SnipeItDeployedStatusId -or -not $asset.assigned_to) {
         continue
     }
 
@@ -276,6 +257,6 @@ foreach ($asset in $snipeAssets) {
     }
 
     if (-not $discoDevicesBySerial.ContainsKey($asset.serial)) {
-        Write-Information "Snipe-IT asset $($asset.serial) is Deployed and assigned to '$($asset.assigned_to.username)' but has no matching active assignment in Disco"
+        continue
     }
 }
